@@ -1,0 +1,28 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/api/api-deploy.yaml
+#=========================================================
+NAME=aries-endorser-proxy
+ROLE=proxy
+TAG_NAME=dev
+ROUTE_TIMEOUT=60
+ACAPY_AGENT_HOST=aries-endorser-agent
+APPLICATION_ADMIN_DOMAIN=aries-endorser-agent-admin-dev.apps.silver.devops.gov.bc.ca
+APPLICATION_DOMAIN=aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
+ACAPY_ADMIN_PORT=8051
+ACAPY_WS_PORT=8052
+ACAPY_HTTP_PORT=8050
+CADDY_AGENT_ADMIN_PORT=2016
+CADDY_AGENT_PORT=2015
+NAMESPACE=4a9599
+SUFFIX=
+APP_NAME=aries-endorser-service
+APP_GROUP=aries-endorser-service
+IMAGE_NAMESPACE=4a9599-tools
+MIN_REPLICAS=2
+MAX_REPLICAS=16
+CPU_REQUEST=150m
+CPU_LIMIT=300m
+MEMORY_REQUEST=256Mi
+MEMORY_LIMIT=512Mi

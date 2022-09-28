@@ -1,0 +1,503 @@
+---
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ${NAME}${SUFFIX}
+objects:
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        name: ${NAME}${SUFFIX}
+        app: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    spec:
+      description: Allow endorser agent ports to be accessed by controller and caddy proxy.
+      ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  role: ${SERVICE_ROLE}
+                  app: ${APP_NAME}${SUFFIX}
+                  env: ${TAG_NAME}
+              namespaceSelector:
+                matchLabels:
+                  name: ${NAMESPACE_NAME}
+                  environment: ${TAG_NAME}
+          ports:
+            - protocol: TCP
+              port: ${ACAPY_ADMIN_PORT}
+        - from:
+            - podSelector:
+                matchLabels:
+                  role: ${PROXY_ROLE}
+                  app: ${APP_NAME}${SUFFIX}
+                  env: ${TAG_NAME}
+              namespaceSelector:
+                matchLabels:
+                  name: ${NAMESPACE_NAME}
+                  environment: ${TAG_NAME}
+          ports:
+            - protocol: TCP
+              port: ${ACAPY_ADMIN_PORT}
+            - protocol: TCP
+              port: ${ACAPY_HTTP_PORT}
+            - protocol: TCP
+              port: ${ACAPY_WS_PORT}
+      podSelector:
+        matchLabels:
+          role: ${ROLE}
+          app: ${APP_NAME}${SUFFIX}
+          env: ${TAG_NAME}
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        app: ${APP_NAME}${SUFFIX}
+        name: ${NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    spec:
+      ports:
+        - name: ${NAME}${SUFFIX}-admin
+          port: ${ACAPY_ADMIN_PORT}
+          protocol: TCP
+          targetPort: ${ACAPY_ADMIN_PORT}
+        - name: ${NAME}${SUFFIX}-public
+          port: ${ACAPY_HTTP_PORT}
+          protocol: TCP
+          targetPort: ${ACAPY_HTTP_PORT}
+        - name: ${NAME}${SUFFIX}-ws
+          port: ${ACAPY_WS_PORT}
+          protocol: TCP
+          targetPort: ${ACAPY_WS_PORT}
+      selector:
+        name: ${NAME}${SUFFIX}
+
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        app: ${APP_NAME}${SUFFIX}
+        name: ${NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    spec:
+      accessModes:
+        - ReadWriteMany
+      resources:
+        requests:
+          storage: ${PERSISTENT_VOLUME_SIZE}
+      storageClassName: ${PERSISTENT_VOLUME_CLASS}
+
+  - kind: Secret
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        app: ${APP_NAME}${SUFFIX}
+        name: ${NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    stringData:
+      seed: ${ACAPY_WALLET_SEED}
+      key: ${ACAPY_WALLET_KEY}
+    type: Opaque
+  
+  - kind: Secret
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}-api
+      labels:
+        name: ${NAME}${SUFFIX}
+        app: ${APP_NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    stringData:
+      admin-api-key: ${ACAPY_API_ADMIN_KEY}
+      webhook-api-key: ${ACAPY_WEBHOOK_URL_API_KEY}
+    type: Opaque
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        app: ${APP_NAME}${SUFFIX}
+        name: ${NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+      annotations:
+        description: Defines how to deploy the application server
+        app.openshift.io/connects-to: >-
+          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${WALLET_POSTGRESQL_HOST}${SUFFIX}"},
+          {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ENDORSER_SERVICE_HOST}${SUFFIX}"}]
+    spec:
+      replicas: 1
+      selector:
+        name: ${NAME}${SUFFIX}
+      strategy:
+        type: Rolling
+      template:
+        metadata:
+          name: ${NAME}${SUFFIX}
+          labels:
+            app: ${APP_NAME}${SUFFIX}
+            name: ${NAME}${SUFFIX}
+            app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+            app-group: ${APP_GROUP}
+            role: ${ROLE}
+            env: ${TAG_NAME}
+        spec:
+          containers:
+            - name: ${NAME}${SUFFIX}
+              command:
+                # Note:
+                #  - The wallet-name cannot contain '-'s.
+                - bash
+                - -c
+                - $(echo aca-py start --auto-provision 
+                  --seed "${ACAPY_WALLET_SEED}"
+                  --label "${ENDORSER_AGENT_LABEL}" 
+                  --inbound-transport http 0.0.0.0 ${ACAPY_HTTP_PORT} 
+                  --inbound-transport ws 0.0.0.0 ${ACAPY_WS_PORT} 
+                  --outbound-transport ws 
+                  --outbound-transport http 
+                  --emit-new-didcomm-prefix 
+                  --endpoint ${AGENT_URL} ${AGENT_WS_URL}
+                  --wallet-type askar 
+                  --wallet-storage-type postgres_storage
+                  --wallet-storage-config "$(eval echo \"${WALLET_STORAGE_CONFIGURATION}\")"
+                  --wallet-storage-creds "$(eval echo \"${WALLET_STORAGE_CREDENTIALS}\")"
+                  --admin 0.0.0.0 ${ACAPY_ADMIN_PORT} 
+                  --admin-api-key ${ACAPY_API_ADMIN_KEY} 
+                  --webhook-url "${ACAPY_CONTROLLER_WEBHOOK_URL}#${ACAPY_WEBHOOK_URL_API_KEY}"
+                  --notify-revocation
+                  --monitor-revocation-notification
+                  --auto-ping-connection
+                  --monitor-ping
+                  --public-invites
+                  --endorser-protocol-role endorser
+                  );
+              env:
+                - name: POSTGRESQL_WALLET_HOST
+                  value: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                - name: POSTGRESQL_WALLET_PORT
+                  value: ${WALLET_POSTGRESQL_PORT}
+                - name: POSTGRESQL_WALLET_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-user
+                - name: POSTGRESQL_WALLET_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-password
+                - name: POSTGRESQL_WALLET_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                      key: admin-password
+                - name: ACAPY_WALLET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: key
+                - name: WALLET_STORAGE_CONFIGURATION
+                  value: ${ACAPY_WALLET_STORAGE_CONFIG}
+                - name: WALLET_STORAGE_CREDENTIALS
+                  value: ${ACAPY_WALLET_STORAGE_CREDS}
+                - name: ACAPY_WALLET_NAME
+                  value: ${NAME}${SUFFIX}-wallet
+                - name: ACAPY_HTTP_PORT
+                  value: ${ACAPY_HTTP_PORT}
+                - name: ACAPY_WS_PORT
+                  value: ${ACAPY_WS_PORT}
+                - name: ACAPY_ADMIN_PORT
+                  value: ${ACAPY_ADMIN_PORT}
+                - name: ACAPY_API_ADMIN_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}-api
+                      key: admin-api-key
+                - name: ENDORSER_AGENT_LABEL
+                  value: ${ENDORSER_AGENT_LABEL}
+                - name: AGENT_URL
+                  value: ${AGENT_URL}
+                - name: ENDORSER_SERVICE_PORT
+                  value: ${ENDORSER_SERVICE_PORT}
+                - name: ENDORSER_SERVICE_HOST
+                  value: ${ENDORSER_SERVICE_HOST}
+                - name: ACAPY_CONTROLLER_WEBHOOK_URL
+                  value: ${ACAPY_CONTROLLER_WEBHOOK_URL}
+                - name: LOG_LEVEL
+                  value: ${LOG_LEVEL}
+                - name: ACAPY_WEBHOOK_URL_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: webhook-api-key
+                - name: ACAPY_GENESIS_URL
+                  value: ${GENESIS_FILE_URL}
+                - name: ACAPY_READ_ONLY_LEDGER
+                  value: ${AGENT_READ_ONLY_LEDGER}
+              image: " "
+              ports:
+                - containerPort: ${ACAPY_ADMIN_PORT}
+                  protocol: TCP
+                - containerPort: ${ACAPY_HTTP_PORT}
+                  protocol: TCP
+                - containerPort: ${ACAPY_WS_PORT}
+                  protocol: TCP
+              readinessProbe:
+                timeoutSeconds: 30
+                initialDelaySeconds: 3
+                httpGet:
+                  path: "/"
+                  port: ${ACAPY_HTTP_PORT}
+              livenessProbe:
+                timeoutSeconds: 30
+                initialDelaySeconds: 300
+                httpGet:
+                  path: "/"
+                  port: ${ACAPY_HTTP_PORT}
+              imagePullPolicy: IfNotPresent
+              resources:
+                limits:
+                  cpu: ${CPU_LIMIT}
+                  memory: ${MEMORY_LIMIT}
+                requests:
+                  cpu: ${CPU_REQUEST}
+                  memory: ${MEMORY_REQUEST}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              volumeMounts:
+                - name: ${NAME}${SUFFIX}-data
+                  mountPath: ${MOUNT_PATH}
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - name: ${NAME}${SUFFIX}-data
+              persistentVolumeClaim:
+                claimName: ${NAME}${SUFFIX}
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - ${NAME}${SUFFIX}
+            from:
+              kind: ImageStreamTag
+              name: ${NAME}:${TAG_NAME}
+              namespace: ${IMAGE_NAMESPACE}
+
+parameters:
+  - name: NAME
+    displayName: Name
+    description: The name assigned to all the objects defined in this template.
+    required: true
+    value: aries-endorser-agent
+  - name: APP_GROUP
+    displayName: App Group
+    description: The name assigned to all of the deployments in this project.
+    required: true
+    value: aries-endorser-service
+  - name: NAMESPACE_NAME
+    displayName: NameSpace name
+    description: name of the project namespace
+    required: true
+    value: 4a9599
+  - name: APP_NAME
+    displayName: App Name
+    description: Used to group components together in the OpenShift console.
+    required: true
+    value: aries-endorser-service
+  - name: SUFFIX
+    displayName: Suffix
+    description: A name suffix used for all objects
+    required: false
+    value: ''
+  - name: ROLE
+    displayName: Role
+    description: The role of this service within the application - used for Network Policies
+    required: true
+    value: agent
+  - name: SERVICE_ROLE
+    displayName: Service Role
+    description: The role of the email verification service within the application - used for Network Policies
+    required: true
+    value: controller
+  - name: PROXY_ROLE
+    displayName: Proxy Role
+    description: The role of the nginx proxy within the application - used for Network Policies
+    required: true
+    value: proxy
+  - name: IMAGE_NAMESPACE
+    displayName: Namespace containing application images.
+    required: true
+    value: 4a9599-tools
+  - name: AGENT_READ_ONLY_LEDGER
+    displayName: Set read only ledger flag.
+    description: Enable/Disable the read only ledger flag.  Controls the inclusion/exclusion of the agent '--read-only-ledger' startup parameter.  Defaults to disabled.
+    required: true
+    value: "false"
+  - name: ACAPY_API_ADMIN_KEY
+    displayName: Agent Admin API Key
+    description: The key used to authenticate client requests to the admin api.
+    required: false
+    generate: expression
+    from: "[a-zA-Z0-9]{32}"
+  - name: TAG_NAME
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod.
+    required: true
+    value: dev
+  - name: WALLET_POSTGRESQL_HOST
+    displayName: Postgresql Host
+    description: The name of the Postgresql deployment
+    required: true
+    value: aries-endorser-db
+  - name: WALLET_POSTGRESQL_PORT
+    displayName: Postgresql Port
+    description: The db port of the Postgres deployment
+    required: true
+    value: "5432"
+  - name: ACAPY_WALLET_STORAGE_CONFIG
+    displayName: Wallet Storage Configuration
+    required: true
+    description: Wallet storage configuration
+    value: '{\"url\":\"${WALLET_POSTGRESQL_HOST}:${WALLET_POSTGRESQL_PORT}\",\"wallet_scheme\":\"DatabasePerWallet\"}'
+  - name: ACAPY_WALLET_STORAGE_CREDS
+    displayName: Wallet Storage Credential Configuration
+    required: true
+    description: Wallet storage credential configuration
+    value: '{\"account\":\"${POSTGRESQL_WALLET_USER}\",\"password\":\"${POSTGRESQL_WALLET_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_WALLET_ADMIN_PASSWORD}\"}'
+  - name: ACAPY_ADMIN_PORT
+    displayName: Admin Port
+    description: The admin port on which the service will listen.
+    required: true
+    value: "8051"
+  - name: ACAPY_HTTP_PORT
+    displayName: Agent Port
+    description: The agent port on which the service will listen.
+    required: true
+    value: "8050"
+  - name: ACAPY_WS_PORT
+    displayName: Agent Port
+    description: The agent port on which the service will listen.
+    required: true
+    value: "8052"
+  - name: ACAPY_WALLET_KEY
+    displayName: Wallet Encryption Key
+    description: The encryption key to be used for the wallets.  Needs to be base64 encoded.
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9]{32}"
+  - name: ACAPY_WALLET_SEED
+    displayName: Aca-py Wallet Seed
+    description: The Seed used for the indy wallet.  Needs to be base64 encoded.
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9]{32}"
+  - name: ENDORSER_SERVICE_HOST
+    displayName: Endorser Service Host
+    description: Hostname for the endorser controller service
+    required: true
+    value: aries-endorser-api
+  - name: ENDORSER_SERVICE_PORT
+    displayName: Endorser Service Port
+    description: Port number for the endorser controller service
+    required: true
+    value: "5000"
+  - name: ACAPY_WEBHOOK_URL_API_KEY
+    displayName: Endorser Controller Webhook API Key
+    description: Webhook api key for endorser controller service
+    required: true
+    generate: expression
+    from: "[a-zA-Z0-9]{32}"
+  - name: ACAPY_CONTROLLER_WEBHOOK_URL
+    displayName: Endorser Controller Webhook URL
+    description: Webhook url for endorser controller service
+    required: true
+    value: http://aries-endorser-api:5000/webhook#tbd
+  - name: AGENT_URL
+    displayName: Site URL
+    description: The URL for the site
+    required: true
+    value: https://aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
+  - name: AGENT_WS_URL
+    displayName: Site URL
+    description: The URL for the site
+    required: true
+    value: wss://aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca 
+  - name: GENESIS_FILE_URL
+    displayName: Genesis File URL
+    description: The URL from which the genesis file can be downloaded.
+    required: true
+    value: https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_sandbox_genesis
+  - name: ENDORSER_AGENT_LABEL
+    displayName: Display Label
+    description: Display label
+    required: true
+    value: Endorser
+  - name: LOG_LEVEL
+    displayName: Log Level
+    description: Log Level
+    required: true
+    value: INFO
+  - name: MOUNT_PATH
+    displayName: Mount Path
+    description: The path to mount the persistent volume.
+    required: true
+    value: /home/indy/.indy_client/wallet
+  - name: PERSISTENT_VOLUME_SIZE
+    displayName: Persistent Volume Size
+    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
+    required: true
+    value: 5Gi
+  - name: PERSISTENT_VOLUME_CLASS
+    displayName: Persistent Volume Class name
+    description: The class of the volume; gluster-file, gluster-block, gluster-file-db
+    required: false
+    value: netapp-file-standard
+  - name: CPU_REQUEST
+    displayName: Resources CPU Request
+    description: The resources CPU request (in cores) for this build.
+    required: true
+    value: 10m
+  - name: CPU_LIMIT
+    displayName: Resources CPU Limit
+    description: The resources CPU limit (in cores) for this build.
+    required: true
+    value: 250m
+  - name: MEMORY_REQUEST
+    displayName: Resources Memory Request
+    description: The resources Memory request (in Mi, Gi, etc) for this build.
+    required: true
+    value: 10Mi
+  - name: MEMORY_LIMIT
+    displayName: Resources Memory Limit
+    description: The resources Memory limit (in Mi, Gi, etc) for this build.
+    required: true
+    value: 1Gi

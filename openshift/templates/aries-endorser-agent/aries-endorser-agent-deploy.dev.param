@@ -1,0 +1,40 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/aries-endorser-agent/aries-endorser-agent-deploy.yaml
+#=========================================================
+# NAME=aries-endorser-agent
+# APP_GROUP=aries-endorser-service
+# NAMESPACE_NAME=4a9599
+# APP_NAME=aries-endorser-service
+# SUFFIX=
+# ROLE=agent
+# SERVICE_ROLE=cotroller
+# IMAGE_NAMESPACE=4a9599-tools
+# ENDORSER_AGENT_LABEL=Endorser
+# AGENT_READ_ONLY_LEDGER=false
+# ACAPY_API_ADMIN_KEY=[a-zA-Z0-9]{32}
+# ACAPY_WEBHOOK_URL_API_KEY=[a-zA-Z0-9]{32}
+TAG_NAME=dev
+# WALLET_POSTGRESQL_HOST=aries-endorser-waller
+# WALLET_POSTGRESQL_PORT=5432
+# ACAPY_WALLET_STORAGE_CONFIG='{\"url\":\"${WALLET_POSTGRESQL_HOST}:${WALLET_POSTGRESQL_PORT}\",\"wallet_scheme\":\"DatabasePerWallet\"}'
+# ACAPY_WALLET_STORAGE_CREDS='{\"account\":\"${POSTGRESQL_WALLET_USER}\",\"password\":\"${POSTGRESQL_WALLET_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_WALLET_ADMIN_PASSWORD}\"}'
+# ACAPY_ADMIN_PORT=8051
+# ACAPY_HTTP_PORT=8050
+# ACAPY_WS_PORT=8052
+# ENDORSER_SERVICE_HOST=aries-endorser-api
+# ENDORSER_SERVICE_PORT=5000
+# ACAPY_WALLET_KEY=[a-zA-Z0-9]{32}
+# ACAPY_WALLET_SEED=[a-zA-Z0-9]{32}
+AGENT_URL=https://aries-mediator-agent-dev.apps.silver.devops.gov.bc.ca
+AGENT_WS_URL=wss://aries-mediator-agent-dev.apps.silver.devops.gov.bc.ca
+# ACAPY_CONTROLLER_WEBHOOK_URL=http://aries-endorser-api:5000/webhook
+# GENESIS_FILE_URL=https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_sandbox_genesis
+# MOUNT_PATH=/home/indy/.indy_client/wallet
+# PERSISTENT_VOLUME_SIZE=5Gi
+# PERSISTENT_VOLUME_CLASS=netapp-file-standard
+# CPU_REQUEST=10m
+# CPU_LIMIT=250m
+# MEMORY_REQUEST=10Mi
+# MEMORY_LIMIT=1Gi

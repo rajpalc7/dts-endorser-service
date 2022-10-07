@@ -31,8 +31,8 @@ objects:
         type: Docker
         dockerStrategy:
           from:
-            kind: DockerImage
-            name: ${SOURCE_IMAGE}
+            kind: ${SOURCE_IMAGE_KIND}
+            name: ${SOURCE_IMAGE_REGISTRY}${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}
           dockerfilePath: ${DOCKER_FILE_PATH}
       output:
         to:
@@ -72,17 +72,32 @@ parameters:
     displayName: Source Context Directory
     description: The source context directory.
     required: false
-    value: docker
+    value: endorser
   - name: DOCKER_FILE_PATH
     displayName: Docker File Path
     description: The path to the docker file defining the build.
     required: false
-    value: acapy/Dockerfile.acapy
-  - name: SOURCE_IMAGE
-    displayName: Source Image
-    description: The fully-qualified name of the source image for this component. 
+    value: Dockerfile.endorser
+  - name: SOURCE_IMAGE_KIND
+    displayName: Source Image Kind
     required: true
-    value: artifacts.developer.gov.bc.ca/docker-remote/bcgovimages/von-image:py36-1.16-1
+    description: The 'kind' (type) of the  source image; typically ImageStreamTag, or DockerImage.
+    value: DockerImage
+  - name: SOURCE_IMAGE_REGISTRY
+    displayName: Source Image Registry
+    description: The name of the Source Image Registry.
+    required: false
+    value: artifacts.developer.gov.bc.ca/docker-remote/
+  - name: SOURCE_IMAGE_NAME
+    displayName: Source Image Name
+    required: true
+    description: The name of the source image.
+    value: python
+  - name: SOURCE_IMAGE_TAG
+    displayName: Source Image Tag
+    required: true
+    description: The tag of the source image.
+    value: 3.10-slim-buster
   - name: OUTPUT_IMAGE_TAG
     displayName: Output Image Tag
     description: The tag given to the built image.

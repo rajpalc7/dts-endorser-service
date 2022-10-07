@@ -308,7 +308,7 @@ parameters:
     displayName: Postgresql Host
     description: The name of the Postgresql deployment
     required: true
-    value: aries-endorser-api-db
+    value: aries-endorser-db
   - name: CONTROLLER_POSTGRESQL_PORT
     displayName: Postgresql Port
     description: The db port of the Postgres deployment

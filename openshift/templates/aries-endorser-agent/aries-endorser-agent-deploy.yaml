@@ -361,7 +361,7 @@ parameters:
     displayName: Set read only ledger flag.
     description: Enable/Disable the read only ledger flag.  Controls the inclusion/exclusion of the agent '--read-only-ledger' startup parameter.  Defaults to disabled.
     required: true
-    value: "false"
+    value: "true"
   - name: ACAPY_API_ADMIN_KEY
     displayName: Agent Admin API Key
     description: The key used to authenticate client requests to the admin api.

@@ -13,7 +13,7 @@
 # BACKUP=true
 # BACKUP_ROLE=backup
 # IMAGE_NAMESPACE=4a9599-tools
-# SOURCE_IMAGE_NAME=aries-endorser-wallet
+# SOURCE_IMAGE_NAME=aries-endorser-db
 TAG_NAME=test
 # POSTGRESQL_DATABASE_NAME=aries-endorser-wallet
 # POSTGRESQL_USER=[a-zA-Z_][a-zA-Z0-9_]{10}

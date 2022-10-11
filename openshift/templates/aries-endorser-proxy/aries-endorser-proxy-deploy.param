@@ -1,25 +1,32 @@
 #=========================================================
 # OpenShift template parameters for:
 # Component: .
-# Template File: ../openshift/templates/api/api-deploy.yaml
+# Template File: ../openshift/templates/aries-endorser-proxy/aries-endorser-proxy-deploy.yaml
 #=========================================================
 NAME=aries-endorser-proxy
+APP_NAME=aries-endorser-service
 ROLE=proxy
 TAG_NAME=dev
-ROUTE_TIMEOUT=60
-ACAPY_AGENT_HOST=aries-endorser-agent
-APPLICATION_ADMIN_DOMAIN=aries-endorser-agent-admin-dev.apps.silver.devops.gov.bc.ca
-APPLICATION_DOMAIN=aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
-ACAPY_ADMIN_PORT=8051
-ACAPY_WS_PORT=8052
-ACAPY_HTTP_PORT=8050
-CADDY_AGENT_ADMIN_PORT=2016
-CADDY_AGENT_PORT=2015
 NAMESPACE=4a9599
 SUFFIX=
-APP_NAME=aries-endorser-service
 APP_GROUP=aries-endorser-service
 IMAGE_NAMESPACE=4a9599-tools
+ACAPY_AGENT_HOST=aries-endorser-agent
+ENDORSER_SERVICE_HOST=aries-endorser-api
+ENDORSER_SERVICE_PORT=5000
+ROUTE_TIMEOUT=60
+CADDY_CONFIG_MOUNT_PATH=/etc/caddy/
+CADDY_CONFIG_FILE_NAME=Caddyfile
+CADDY_CONFIG_MAP_NAME=caddy-conf
+APPLICATION_ADMIN_DOMAIN=aries-endorser-agent-admin-dev.apps.silver.devops.gov.bc.ca
+APPLICATION_DOMAIN=aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
+ENDORSER_SERVICE_DOMAIN=aries-endorser-service-dev.apps.silver.devops.gov.bc.ca
+ACAPY_ADMIN_PORT=8051
+ACAPY_HTTP_PORT=8050
+ACAPY_WS_PORT=8052
+CADDY_AGENT_PORT=2015
+CADDY_AGENT_ADMIN_PORT=2016
+CADDY_ENDORSER_SERVICE_PORT=2017
 MIN_REPLICAS=2
 MAX_REPLICAS=16
 CPU_REQUEST=150m

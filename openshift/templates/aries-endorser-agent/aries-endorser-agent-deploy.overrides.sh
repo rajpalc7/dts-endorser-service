@@ -12,17 +12,19 @@ fi
 
 if createOperation; then
   # Ask the user to supply the sensitive parameters ...
-  readParameter "ACAPY_WALLET_SEED - Please provide the indy wallet seed for the environment.  If left blank, a seed will be randomly generated using openssl:" ACAPY_WALLET_SEED $(generateSeed) "false"
-  readParameter "ACAPY_WALLET_KEY - Please provide the wallet encryption key for the environment.  If left blank, a 48 character long base64 encoded value will be randomly generated using openssl:" ACAPY_WALLET_KEY $(generateKey) "false"
-  readParameter "ACAPY_API_ADMIN_KEY - Please provide the key for the agent's Admin API.  If left blank, a 32 character long base64 encoded value will be randomly generated using openssl:" ACAPY_API_ADMIN_KEY $(generateKey 32) "false"
-  readParameter "ACAPY_WEBHOOK_URL_API_KEY - Please provide the key for the agent's Admin API.  If left blank, a 32 character long base64 encoded value will be randomly generated using openssl:" ACAPY_WEBHOOK_URL_API_KEY $(generateKey 32) "false"
+  readParameter "ADMIN_API_KEY - Please provide the key for the agent's Admin API.  If left blank, a 32 character long base64 encoded value will be randomly generated using openssl:" ADMIN_API_KEY $(generateKey 32) "false"
+  readParameter "WALLET_KEY - Please provide the wallet encryption key for the environment.  If left blank, a 48 character long base64 encoded value will be randomly generated using openssl:" WALLET_KEY $(generateKey) "false"
+  readParameter "WALLET_SEED - Please provide the indy wallet seed for the environment.  If left blank, a seed will be randomly generated using openssl:" WALLET_SEED $(generateSeed) "false"
+  readParameter "WALLET_DID - Please provide the indy wallet did for the environment.  The default is an empty string:" WALLET_DID "" "false"
+  readParameter "CONTROLLER_WEBHOOK_URL - Please provide the url to be used by the agent to send webhooks for the environment.  The default is ${CONTROLLER_WEBHOOK_URL}:" CONTROLLER_WEBHOOK_URL "${CONTROLLER_WEBHOOK_URL}" "false"
 else
   # Secrets are removed from the configurations during update operations ...
-  printStatusMsg "Update operation detected ...\nSkipping the prompts for ACAPY_WALLET_SEED secret... \n"
-  writeParameter "ACAPY_WALLET_SEED" "prompt_skipped" "false"
-  writeParameter "ACAPY_WALLET_KEY" "prompt_skipped" "false"
-  writeParameter "ACAPY_API_ADMIN_KEY" "prompt_skipped" "false"
-  writeParameter "ACAPY_WEBHOOK_URL_API_KEY" "prompt_skipped" "false"
+  printStatusMsg "Update operation detected ...\nSkipping the prompts for ADMIN_API_KEY, CONTROLLER_WEBHOOK_URL, WALLET_KEY, WALLET_SEED, and WALLET_DID secrets ... \n"
+  writeParameter "ADMIN_API_KEY" "prompt_skipped" "false"
+  writeParameter "WALLET_KEY" "prompt_skipped" "false"
+  writeParameter "WALLET_SEED" "prompt_skipped" "false"
+  writeParameter "WALLET_DID" "prompt_skipped" "false"
+  writeParameter "CONTROLLER_WEBHOOK_URL" "prompt_skipped" "false"
 fi
 
 SPECIALDEPLOYPARMS="--param-file=${_overrideParamFile}"

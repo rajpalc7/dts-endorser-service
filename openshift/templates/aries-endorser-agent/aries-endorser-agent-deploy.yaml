@@ -20,7 +20,7 @@ objects:
         - from:
             - podSelector:
                 matchLabels:
-                  role: ${SERVICE_ROLE}
+                  role: ${CONTROLLER_ROLE}
                   app: ${APP_NAME}${SUFFIX}
                   env: ${TAG_NAME}
               namespaceSelector:
@@ -29,7 +29,7 @@ objects:
                   environment: ${TAG_NAME}
           ports:
             - protocol: TCP
-              port: ${ACAPY_ADMIN_PORT}
+              port: ${{AGENT_ADMIN_PORT}}
         - from:
             - podSelector:
                 matchLabels:
@@ -42,11 +42,11 @@ objects:
                   environment: ${TAG_NAME}
           ports:
             - protocol: TCP
-              port: ${ACAPY_ADMIN_PORT}
+              port: ${{AGENT_ADMIN_PORT}}
             - protocol: TCP
-              port: ${ACAPY_HTTP_PORT}
+              port: ${{AGENT_HTTP_PORT}}
             - protocol: TCP
-              port: ${ACAPY_WS_PORT}
+              port: ${{AGENT_WS_PORT}}
       podSelector:
         matchLabels:
           role: ${ROLE}
@@ -67,60 +67,42 @@ objects:
     spec:
       ports:
         - name: ${NAME}${SUFFIX}-admin
-          port: ${ACAPY_ADMIN_PORT}
+          port: ${{AGENT_ADMIN_PORT}}
           protocol: TCP
-          targetPort: ${ACAPY_ADMIN_PORT}
+          targetPort: ${{AGENT_ADMIN_PORT}}
         - name: ${NAME}${SUFFIX}-public
-          port: ${ACAPY_HTTP_PORT}
+          port: ${{AGENT_HTTP_PORT}}
           protocol: TCP
-          targetPort: ${ACAPY_HTTP_PORT}
+          targetPort: ${{AGENT_HTTP_PORT}}
         - name: ${NAME}${SUFFIX}-ws
-          port: ${ACAPY_WS_PORT}
+          port: ${{AGENT_WS_PORT}}
           protocol: TCP
-          targetPort: ${ACAPY_WS_PORT}
+          targetPort: ${{AGENT_WS_PORT}}
       selector:
         name: ${NAME}${SUFFIX}
 
-  - kind: PersistentVolumeClaim
+  - kind: Secret
     apiVersion: v1
     metadata:
-      name: ${NAME}${SUFFIX}
+      name: ${WALLET_CREDENTIAL_STORE_NAME}${SUFFIX}
       labels:
-        app: ${APP_NAME}${SUFFIX}
         name: ${NAME}${SUFFIX}
+        app: ${APP_NAME}${SUFFIX}
         app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
         app-group: ${APP_GROUP}
         role: ${ROLE}
         env: ${TAG_NAME}
-    spec:
-      accessModes:
-        - ReadWriteMany
-      resources:
-        requests:
-          storage: ${PERSISTENT_VOLUME_SIZE}
-      storageClassName: ${PERSISTENT_VOLUME_CLASS}
+    stringData:
+      key: ${WALLET_KEY}
+      seed: ${WALLET_SEED}
+      did: ${WALLET_DID}
+    type: Opaque
 
   - kind: Secret
     apiVersion: v1
     metadata:
       name: ${NAME}${SUFFIX}
       labels:
-        app: ${APP_NAME}${SUFFIX}
-        name: ${NAME}${SUFFIX}
-        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
-        app-group: ${APP_GROUP}
-        role: ${ROLE}
-        env: ${TAG_NAME}
-    stringData:
-      seed: ${ACAPY_WALLET_SEED}
-      key: ${ACAPY_WALLET_KEY}
-    type: Opaque
-  
-  - kind: Secret
-    apiVersion: v1
-    metadata:
-      name: ${NAME}${SUFFIX}-api
-      labels:
         name: ${NAME}${SUFFIX}
         app: ${APP_NAME}${SUFFIX}
         app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
@@ -128,8 +110,8 @@ objects:
         role: ${ROLE}
         env: ${TAG_NAME}
     stringData:
-      admin-api-key: ${ACAPY_API_ADMIN_KEY}
-      webhook-api-key: ${ACAPY_WEBHOOK_URL_API_KEY}
+      admin-api-key: ${ADMIN_API_KEY}
+      webhook-url: ${CONTROLLER_WEBHOOK_URL}
     type: Opaque
 
   - kind: DeploymentConfig
@@ -146,7 +128,7 @@ objects:
       annotations:
         description: Defines how to deploy the application server
         app.openshift.io/connects-to: >-
-          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${WALLET_POSTGRESQL_HOST}${SUFFIX}"},
+          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${WALLET_HOST}${SUFFIX}"},
           {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ENDORSER_SERVICE_HOST}${SUFFIX}"}]
     spec:
       replicas: 1
@@ -168,116 +150,134 @@ objects:
           containers:
             - name: ${NAME}${SUFFIX}
               command:
-                # Note:
-                #  - The wallet-name cannot contain '-'s.
                 - bash
                 - -c
-                - $(echo aca-py start --auto-provision 
-                  --seed "${ACAPY_WALLET_SEED}"
-                  --label "${ENDORSER_AGENT_LABEL}" 
-                  --inbound-transport http 0.0.0.0 ${ACAPY_HTTP_PORT} 
-                  --inbound-transport ws 0.0.0.0 ${ACAPY_WS_PORT} 
+                - $(echo aca-py start 
+                  --inbound-transport http '0.0.0.0' ${HTTP_INTERFACE_PORT} 
+                  --inbound-transport ws '0.0.0.0' ${WS_INTERFACE_PORT} 
                   --outbound-transport ws 
                   --outbound-transport http 
-                  --emit-new-didcomm-prefix 
                   --endpoint ${AGENT_URL} ${AGENT_WS_URL}
-                  --wallet-type askar 
-                  --wallet-storage-type postgres_storage
                   --wallet-storage-config "$(eval echo \"${WALLET_STORAGE_CONFIGURATION}\")"
                   --wallet-storage-creds "$(eval echo \"${WALLET_STORAGE_CREDENTIALS}\")"
-                  --admin 0.0.0.0 ${ACAPY_ADMIN_PORT} 
-                  --admin-api-key ${ACAPY_API_ADMIN_KEY} 
-                  --webhook-url "${ACAPY_CONTROLLER_WEBHOOK_URL}#${ACAPY_WEBHOOK_URL_API_KEY}"
-                  --notify-revocation
-                  --monitor-revocation-notification
-                  --auto-ping-connection
-                  --monitor-ping
-                  --public-invites
-                  --endorser-protocol-role endorser
+                  --admin 0.0.0.0 ${ADMIN_INTERFACE_PORT} 
                   );
               env:
+                - name: ACAPY_ENDORSER_ROLE
+                  value: ${ACAPY_ENDORSER_ROLE}
+
+                - name: ACAPY_LABEL
+                  value: ${ACAPY_LABEL}
+                - name: AGENT_URL
+                  value: ${AGENT_BASE_URL}
+                - name: AGENT_WS_URL
+                  value: ${AGENT_BASE_WS_URL}
+                - name: ACAPY_IMAGE_URL
+                  value: ${ACAPY_IMAGE_URL}
+                - name: ACAPY_READ_ONLY_LEDGER
+                  value: ${ACAPY_READ_ONLY_LEDGER}
+                - name: ACAPY_GENESIS_URL
+                  value: ${ACAPY_GENESIS_URL}
+
+                - name: ACAPY_AUTO_PROVISION
+                  value: ${ACAPY_AUTO_PROVISION}
+                - name: ACAPY_EMIT_NEW_DIDCOMM_PREFIX
+                  value: ${ACAPY_EMIT_NEW_DIDCOMM_PREFIX}
+                - name: ACAPY_AUTO_PING_CONNECTION
+                  value: ${ACAPY_AUTO_PING_CONNECTION}
+                - name: ACAPY_MONITOR_PING
+                  value: ${ACAPY_MONITOR_PING}
+                - name: ACAPY_PUBLIC_INVITES
+                  value: ${ACAPY_PUBLIC_INVITES}
+                - name: ACAPY_NOTIFY_REVOCATION
+                  value: ${ACAPY_NOTIFY_REVOCATION}
+                - name: ACAPY_MONITOR_REVOCATION_NOTIFICATION
+                  value: ${ACAPY_MONITOR_REVOCATION_NOTIFICATION}
+
+                - name: ACAPY_WALLET_NAME
+                  value: ${NAME}${SUFFIX}-wallet
+                - name: ACAPY_WALLET_TYPE
+                  value: ${ACAPY_WALLET_TYPE}
+                - name: ACAPY_WALLET_STORAGE_TYPE
+                  value: ${ACAPY_WALLET_STORAGE_TYPE}
                 - name: POSTGRESQL_WALLET_HOST
-                  value: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                  value: ${WALLET_HOST}${WALLET_SUFFIX}
                 - name: POSTGRESQL_WALLET_PORT
-                  value: ${WALLET_POSTGRESQL_PORT}
+                  value: ${WALLET_HOST_PORT}
+                - name: WALLET_STORAGE_CONFIGURATION
+                  value: ${WALLET_STORAGE_CONFIG}
+                - name: WALLET_STORAGE_CREDENTIALS
+                  value: ${WALLET_STORAGE_CREDS}
                 - name: POSTGRESQL_WALLET_USER
                   valueFrom:
                     secretKeyRef:
-                      name: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                      name: ${WALLET_HOST}${WALLET_SUFFIX}
                       key: database-user
                 - name: POSTGRESQL_WALLET_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                      name: ${WALLET_HOST}${WALLET_SUFFIX}
                       key: database-password
                 - name: POSTGRESQL_WALLET_ADMIN_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: ${WALLET_POSTGRESQL_HOST}${SUFFIX}
+                      name: ${WALLET_HOST}${WALLET_SUFFIX}
                       key: admin-password
                 - name: ACAPY_WALLET_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: ${NAME}${SUFFIX}
+                      name: ${WALLET_CREDENTIAL_STORE_NAME}${SUFFIX}
                       key: key
-                - name: WALLET_STORAGE_CONFIGURATION
-                  value: ${ACAPY_WALLET_STORAGE_CONFIG}
-                - name: WALLET_STORAGE_CREDENTIALS
-                  value: ${ACAPY_WALLET_STORAGE_CREDS}
-                - name: ACAPY_WALLET_NAME
-                  value: ${NAME}${SUFFIX}-wallet
-                - name: ACAPY_HTTP_PORT
-                  value: ${ACAPY_HTTP_PORT}
-                - name: ACAPY_WS_PORT
-                  value: ${ACAPY_WS_PORT}
-                - name: ACAPY_ADMIN_PORT
-                  value: ${ACAPY_ADMIN_PORT}
-                - name: ACAPY_API_ADMIN_KEY
+                - name: ACAPY_WALLET_SEED
                   valueFrom:
                     secretKeyRef:
-                      name: ${NAME}${SUFFIX}-api
+                      name: ${WALLET_CREDENTIAL_STORE_NAME}${SUFFIX}
+                      key: seed
+
+                - name: ACAPY_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: webhook-url
+                - name: HTTP_INTERFACE_PORT
+                  value: ${AGENT_HTTP_PORT}
+                - name: WS_INTERFACE_PORT
+                  value: ${AGENT_WS_PORT}
+                - name: ADMIN_INTERFACE_PORT
+                  value: ${AGENT_ADMIN_PORT}
+                - name: ACAPY_ADMIN_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
                       key: admin-api-key
-                - name: ENDORSER_AGENT_LABEL
-                  value: ${ENDORSER_AGENT_LABEL}
-                - name: AGENT_URL
-                  value: ${AGENT_URL}
+
+                - name: ACAPY_LOG_LEVEL
+                  value: ${LOG_LEVEL}
+
                 - name: ENDORSER_SERVICE_PORT
                   value: ${ENDORSER_SERVICE_PORT}
                 - name: ENDORSER_SERVICE_HOST
                   value: ${ENDORSER_SERVICE_HOST}
-                - name: ACAPY_CONTROLLER_WEBHOOK_URL
-                  value: ${ACAPY_CONTROLLER_WEBHOOK_URL}
-                - name: LOG_LEVEL
-                  value: ${LOG_LEVEL}
-                - name: ACAPY_WEBHOOK_URL_API_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${NAME}${SUFFIX}
-                      key: webhook-api-key
-                - name: ACAPY_GENESIS_URL
-                  value: ${GENESIS_FILE_URL}
-                - name: ACAPY_READ_ONLY_LEDGER
-                  value: ${AGENT_READ_ONLY_LEDGER}
-              image: " "
+              image:  
               ports:
-                - containerPort: ${ACAPY_ADMIN_PORT}
+                - containerPort: ${{AGENT_ADMIN_PORT}}
                   protocol: TCP
-                - containerPort: ${ACAPY_HTTP_PORT}
+                - containerPort: ${{AGENT_HTTP_PORT}}
                   protocol: TCP
-                - containerPort: ${ACAPY_WS_PORT}
+                - containerPort: ${{AGENT_WS_PORT}}
                   protocol: TCP
               readinessProbe:
                 timeoutSeconds: 30
                 initialDelaySeconds: 3
                 httpGet:
-                  path: "/"
-                  port: ${ACAPY_HTTP_PORT}
+                  path: /status/ready
+                  port: ${{AGENT_ADMIN_PORT}}
               livenessProbe:
                 timeoutSeconds: 30
                 initialDelaySeconds: 300
                 httpGet:
-                  path: "/"
-                  port: ${ACAPY_HTTP_PORT}
+                  path: /status/live
+                  port: ${{AGENT_ADMIN_PORT}}
               imagePullPolicy: IfNotPresent
               resources:
                 limits:
@@ -288,18 +288,11 @@ objects:
                   memory: ${MEMORY_REQUEST}
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
-              volumeMounts:
-                - name: ${NAME}${SUFFIX}-data
-                  mountPath: ${MOUNT_PATH}
           dnsPolicy: ClusterFirst
           restartPolicy: Always
           schedulerName: default-scheduler
           securityContext: {}
           terminationGracePeriodSeconds: 30
-          volumes:
-            - name: ${NAME}${SUFFIX}-data
-              persistentVolumeClaim:
-                claimName: ${NAME}${SUFFIX}
       triggers:
         - type: ConfigChange
         - type: ImageChange
@@ -343,83 +336,190 @@ parameters:
     description: The role of this service within the application - used for Network Policies
     required: true
     value: agent
-  - name: SERVICE_ROLE
-    displayName: Service Role
-    description: The role of the email verification service within the application - used for Network Policies
+  - name: CONTROLLER_ROLE
+    displayName: Controller Role
+    description: The role of the endorser api service within the application - used for Network Policies
     required: true
     value: controller
   - name: PROXY_ROLE
     displayName: Proxy Role
-    description: The role of the nginx proxy within the application - used for Network Policies
+    description: The role of the proxy within the application - used for Network Policies
     required: true
     value: proxy
   - name: IMAGE_NAMESPACE
     displayName: Namespace containing application images.
     required: true
     value: 4a9599-tools
-  - name: AGENT_READ_ONLY_LEDGER
-    displayName: Set read only ledger flag.
-    description: Enable/Disable the read only ledger flag.  Controls the inclusion/exclusion of the agent '--read-only-ledger' startup parameter.  Defaults to disabled.
-    required: true
-    value: "true"
-  - name: ACAPY_API_ADMIN_KEY
-    displayName: Agent Admin API Key
-    description: The key used to authenticate client requests to the admin api.
-    required: false
-    generate: expression
-    from: "[a-zA-Z0-9]{32}"
   - name: TAG_NAME
     displayName: Environment TAG name
     description: The TAG name for this environment, e.g., dev, test, prod.
     required: true
     value: dev
-  - name: WALLET_POSTGRESQL_HOST
-    displayName: Postgresql Host
-    description: The name of the Postgresql deployment
+
+  - name: ACAPY_READ_ONLY_LEDGER
+    displayName: Set read only ledger flag.
+    description: Enable/Disable the read only ledger flag.  Controls the inclusion/exclusion of the agent '--read-only-ledger' startup parameter.  Defaults to disabled.
     required: true
-    value: aries-endorser-db
-  - name: WALLET_POSTGRESQL_PORT
-    displayName: Postgresql Port
-    description: The db port of the Postgres deployment
+    value: 'true'
+
+  - name: ADMIN_API_KEY
+    displayName: Agent Admin API Key
+    description: The key used to authenticate client requests to the admin api.
+    required: false
+    generate: expression
+    from: "[a-zA-Z0-9]{32}"
+
+  - name: ACAPY_AUTO_PROVISION
+    displayName: Auto Provision
+    description: If the requested profile does not exist, initialize it with the given parameters.
     required: true
-    value: "5432"
-  - name: ACAPY_WALLET_STORAGE_CONFIG
+    value: 'true'
+  - name: ACAPY_EMIT_NEW_DIDCOMM_PREFIX
+    displayName: Emit New DIDComm Prefix
+    description: Emit protocol messages with new DIDComm prefix.
+    required: true
+    value: 'true'
+  - name: ACAPY_AUTO_PING_CONNECTION
+    displayName: Auto Ping Connection
+    description: Automatically send a trust ping immediately after a connection response is accepted. Some agents require this before marking a connection as 'active'.
+    required: true
+    value: 'true'
+  - name: ACAPY_MONITOR_PING
+    displayName: Monitor Ping
+    description: Send a webhook when a ping is sent or received.
+    required: true
+    value: 'true'
+  - name: ACAPY_PUBLIC_INVITES
+    displayName: Public Invites
+    description: Send invitations out, and receive connection requests, using the public DID for the agent.
+    required: true
+    value: 'true'
+  - name: ACAPY_NOTIFY_REVOCATION
+    displayName: Notify Revocation
+    description: Specifies that aca-py will notify credential recipients when revoking a credential it issued.
+    required: true
+    value: 'true'
+  - name: ACAPY_MONITOR_REVOCATION_NOTIFICATION
+    displayName: Monitor Revocation Notification
+    description: Specifies that aca-py will emit webhooks on notification of revocation received.
+    required: true
+    value: 'true'
+
+  - name: AGENT_ADMIN_PORT
+    displayName: Agent Admin Port
+    description: The admin port on which the service will listen.
+    required: true
+    value: '8051'
+  - name: AGENT_HTTP_PORT
+    displayName: Agent Port
+    description: The agent port on which the service will listen.
+    required: true
+    value: '8050'
+  - name: AGENT_WS_PORT
+    displayName: Agent WS Port
+    description: The WS port on which the service will listen.
+    required: true
+    value: '8052'
+  - name: AGENT_BASE_URL
+    displayName: Site URL
+    description: The URL for the site
+    required: true
+    value: https://aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
+  - name: AGENT_BASE_WS_URL
+    displayName: Site URL
+    description: The URL for the site
+    required: true
+    value: wss://aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca 
+  - name: ACAPY_IMAGE_URL
+    displayName: Agent Image URL
+    description: The URL of the image for the agent
+    required: false
+    value:
+  - name: ACAPY_GENESIS_URL
+    displayName: Genesis File URL
+    description: The URL from which the genesis file can be downloaded.
+    required: true
+    value: https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_sandbox_genesis
+
+  - name: ACAPY_ENDORSER_ROLE
+    displayName: Endorser Role
+    description: Specify the role ('author' or 'endorser') which this agent will participate.
+    required: true
+    value: endorser
+  - name: ACAPY_LABEL
+    displayName: Agent Label/Name
+    description: The label/name of the agent
+    required: true
+    value: Government of British Columbia - Endorser
+
+  # ===============================================================================
+  # Wallet Configuration
+  #--------------------------------------------------------------------------------
+  - name: ACAPY_WALLET_TYPE
+    displayName: Wallet Type
+    description:
+      The wallet type.  Supported internal storage types are 'basic' (memory), 'indy', and 'askar'.
+    required: false
+    value: 'askar'
+  - name: ACAPY_WALLET_STORAGE_TYPE
+    displayName: Wallet Storage Type
+    description:
+      The wallet storage type.  Your choice of 'postgres' or 'sqlite' at the moment.
+      If not defined, defaults to 'sqlite' for compatibility
+    required: false
+    value: postgres_storage
+  - name: WALLET_HOST
+    displayName: PostgreSql Wallet Hostname
+    required: true
+    description: Hostname of the deployed database hosting the wallet.  Only used when ACAPY_WALLET_STORAGE_TYPE = postgres_storage.
+    value: aries-endorser-wallet
+  - name: WALLET_HOST_PORT
+    displayName: PostgreSql Wallet Port
+    required: true
+    description: The port number of the deployed database hosting the wallet.  Only used when ACAPY_WALLET_STORAGE_TYPE = postgres_storage.
+    value: '5432'
+  - name: WALLET_STORAGE_CONFIG
     displayName: Wallet Storage Configuration
     required: true
     description: Wallet storage configuration
-    value: '{\"url\":\"${WALLET_POSTGRESQL_HOST}:${WALLET_POSTGRESQL_PORT}\",\"wallet_scheme\":\"DatabasePerWallet\"}'
-  - name: ACAPY_WALLET_STORAGE_CREDS
+    value: '{\"url\":\"${POSTGRESQL_WALLET_HOST}:${POSTGRESQL_WALLET_PORT}\",\"wallet_scheme\":\"DatabasePerWallet\",\"max_connections\":5}'
+  - name: WALLET_STORAGE_CREDS
     displayName: Wallet Storage Credential Configuration
     required: true
     description: Wallet storage credential configuration
     value: '{\"account\":\"${POSTGRESQL_WALLET_USER}\",\"password\":\"${POSTGRESQL_WALLET_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_WALLET_ADMIN_PASSWORD}\"}'
-  - name: ACAPY_ADMIN_PORT
-    displayName: Admin Port
-    description: The admin port on which the service will listen.
+  - name: WALLET_CREDENTIAL_STORE_NAME
+    displayName: Wallet Credential Store Name
+    description:
+      The name of the wallet credential store (aka The name of the secret
+      that contains the wallet credentials).
     required: true
-    value: "8051"
-  - name: ACAPY_HTTP_PORT
-    displayName: Agent Port
-    description: The agent port on which the service will listen.
-    required: true
-    value: "8050"
-  - name: ACAPY_WS_PORT
-    displayName: Agent Port
-    description: The agent port on which the service will listen.
-    required: true
-    value: "8052"
-  - name: ACAPY_WALLET_KEY
+    value: aries-endorser-agent-wallet-credentials
+  - name: WALLET_KEY
     displayName: Wallet Encryption Key
     description: The encryption key to be used for the wallets.  Needs to be base64 encoded.
     required: true
     generate: expression
     from: "[a-zA-Z0-9]{32}"
-  - name: ACAPY_WALLET_SEED
-    displayName: Aca-py Wallet Seed
+  - name: WALLET_SEED
+    displayName: Indy Wallet Seed
     description: The Seed used for the indy wallet.  Needs to be base64 encoded.
     required: true
     generate: expression
     from: "[a-zA-Z0-9]{32}"
+  - name: WALLET_DID
+    displayName: Indy Wallet DID
+    description: The DID associated to the indy wallet.  Needs to be base64 encoded.
+    required: false
+    generate: expression
+    from: "[a-zA-Z0-9]{16}"
+  - name: WALLET_SUFFIX
+    displayName: Wallet Suffix
+    description: The suffix attached to the wallet
+    required: false
+    value:
+  # ===============================================================================
+
   - name: ENDORSER_SERVICE_HOST
     displayName: Endorser Service Host
     description: Hostname for the endorser controller service
@@ -429,58 +529,19 @@ parameters:
     displayName: Endorser Service Port
     description: Port number for the endorser controller service
     required: true
-    value: "5000"
-  - name: ACAPY_WEBHOOK_URL_API_KEY
-    displayName: Endorser Controller Webhook API Key
-    description: Webhook api key for endorser controller service
-    required: true
-    generate: expression
-    from: "[a-zA-Z0-9]{32}"
-  - name: ACAPY_CONTROLLER_WEBHOOK_URL
-    displayName: Endorser Controller Webhook URL
-    description: Webhook url for endorser controller service
+    value: '5000'
+  - name: CONTROLLER_WEBHOOK_URL
+    displayName: Controller Webhook URL
+    description: The controller's webhook endpoint
     required: true
     value: http://aries-endorser-api:5000/webhook#tbd
-  - name: AGENT_URL
-    displayName: Site URL
-    description: The URL for the site
-    required: true
-    value: https://aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
-  - name: AGENT_WS_URL
-    displayName: Site URL
-    description: The URL for the site
-    required: true
-    value: wss://aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca 
-  - name: GENESIS_FILE_URL
-    displayName: Genesis File URL
-    description: The URL from which the genesis file can be downloaded.
-    required: true
-    value: https://raw.githubusercontent.com/sovrin-foundation/sovrin/stable/sovrin/pool_transactions_sandbox_genesis
-  - name: ENDORSER_AGENT_LABEL
-    displayName: Display Label
-    description: Display label
-    required: true
-    value: Endorser
+
   - name: LOG_LEVEL
     displayName: Log Level
     description: Log Level
     required: true
     value: INFO
-  - name: MOUNT_PATH
-    displayName: Mount Path
-    description: The path to mount the persistent volume.
-    required: true
-    value: /home/indy/.indy_client/wallet
-  - name: PERSISTENT_VOLUME_SIZE
-    displayName: Persistent Volume Size
-    description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
-    required: true
-    value: 5Gi
-  - name: PERSISTENT_VOLUME_CLASS
-    displayName: Persistent Volume Class name
-    description: The class of the volume; gluster-file, gluster-block, gluster-file-db
-    required: false
-    value: netapp-file-standard
+
   - name: CPU_REQUEST
     displayName: Resources CPU Request
     description: The resources CPU request (in cores) for this build.

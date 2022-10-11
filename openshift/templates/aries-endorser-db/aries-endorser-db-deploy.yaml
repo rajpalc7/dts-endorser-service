@@ -4,7 +4,7 @@ metadata:
   annotations:
     description: Deployment template for a postgresql server with persistent storage.
     tags: ${NAME}${SUFFIX}
-  name: ${NAME}${SUFFIX}-persistent-template
+  name: ${NAME}${SUFFIX}
 objects:
   - kind: NetworkPolicy
     apiVersion: networking.k8s.io/v1
@@ -16,7 +16,6 @@ objects:
         app-group: ${APP_GROUP}
         role: ${ROLE}
         env: ${TAG_NAME}
-        backup: ${BACKUP}
     spec:
       description: |
         Allow the api(s) and the backup container to access the db.
@@ -24,7 +23,7 @@ objects:
         - from:
             - podSelector:
                 matchLabels:
-                  role: ${AGENT_ROLE}
+                  role: ${CONTROLLER_ROLE}
                   app: ${APP_NAME}${SUFFIX}
                   app-group: ${APP_GROUP}
                   env: ${TAG_NAME}
@@ -44,7 +43,7 @@ objects:
                   environment: ${TAG_NAME}
           ports:
             - protocol: TCP
-              port: ${PORT}
+              port: ${{PORT}}
       podSelector:
         matchLabels:
           role: ${ROLE}
@@ -89,22 +88,17 @@ objects:
         metadata:
           labels:
             app: ${APP_NAME}${SUFFIX}
+            app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
             name: ${NAME}${SUFFIX}
-            app.kubernetes.io/part-of: ${APP_NAME}
             app-group: ${APP_GROUP}
             role: ${ROLE}
             env: ${TAG_NAME}
+            backup: ${BACKUP}
         spec:
           volumes:
             - name: ${NAME}${SUFFIX}-data
               persistentVolumeClaim:
                 claimName: ${NAME}${SUFFIX}
-            - name: ${NAME}-db-init
-              configMap:
-                name: ${APP_CONFIG_MAP_NAME}
-                items:
-                  - key: ${DB_INIT_SCRIPT_FILE}
-                    path: ${DB_INIT_SCRIPT_FILE}
           containers:
             - name: ${NAME}${SUFFIX}
               image: ' '
@@ -112,33 +106,26 @@ objects:
                 - containerPort: 5432
                   protocol: TCP
               env:
-                - name: CONTROLLER_POSTGRESQL_USER
+                - name: POSTGRESQL_USER
                   valueFrom:
                     secretKeyRef:
                       name: ${NAME}${SUFFIX}
-                      key: controller-database-user
-                - name: CONTROLLER_POSTGRESQL_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${NAME}${SUFFIX}
-                      key: controller-database-password
-                - name: CONTROLLER_POSTGRESQL_ADMIN_USER
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${NAME}${SUFFIX}
-                      key: controller-admin-user
-                - name: CONTROLLER_POSTGRESQL_ADMIN_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${NAME}${SUFFIX}
-                      key: controller-admin-password
+                      key: database-user
                 - name: POSTGRESQL_PASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: ${NAME}${SUFFIX}
-                      key: postgres-admin-password
+                      key: database-password
+                - name: POSTGRESQL_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: admin-password
                 - name: POSTGRESQL_DATABASE
-                  value: ${POSTGRESQL_DATABASE_NAME}
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: database-name
               resources:
                 requests:
                   cpu: ${CPU_REQUEST}
@@ -149,9 +136,6 @@ objects:
               volumeMounts:
                 - name: ${NAME}${SUFFIX}-data
                   mountPath: ${MOUNT_PATH}
-                - name: ${NAME}-db-init
-                  mountPath: ${APP_CONFIG_MOUNT_PATH}${DB_INIT_SCRIPT_FILE}
-                  subPath: ${DB_INIT_SCRIPT_FILE}
               livenessProbe:
                 tcpSocket:
                   port: 5432
@@ -195,7 +179,6 @@ objects:
         app-group: ${APP_GROUP}  
         role: ${ROLE}
         env: ${TAG_NAME}
-        backup: ${BACKUP}
     spec:
       storageClassName: ${PERSISTENT_VOLUME_CLASS}
       accessModes:
@@ -215,11 +198,11 @@ objects:
         role: ${ROLE}
         env: ${TAG_NAME}
     stringData:
-      admin-password: ${POSTGRESQL_PASSWORD}
-      controller-database-user: ${CONTROLLER_POSTGRESQL_USER}
-      controller-database-password: ${CONTROLLER_POSTGRESQL_PASSWORD}
-      controller-admin-user: ${CONTROLLER_POSTGRESQL_ADMIN_USER}
-      controller-admin-password: ${CONTROLLER_POSTGRESQL_ADMIN_PASSWORD}
+      admin-user: ${POSTGRESQL_ADMIN_USER}
+      admin-password: ${POSTGRESQL_ADMIN_PASSWORD}
+      database-password: ${POSTGRESQL_PASSWORD}
+      database-user: ${POSTGRESQL_USER}
+      database-name: ${POSTGRESQL_DATABASE_NAME}
     type: Opaque
   - kind: Service
     apiVersion: v1
@@ -227,11 +210,11 @@ objects:
       name: ${NAME}${SUFFIX}
       labels:
         app: ${APP_NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
         name: ${NAME}${SUFFIX}
         app-group: ${APP_GROUP}
         role: ${ROLE}
         env: ${TAG_NAME}
-        backup: ${BACKUP}
       annotations:
         template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="${NAME}${SUFFIX}")].port}
     spec:
@@ -276,11 +259,11 @@ parameters:
     description: The role of this service within the application - used for Network Policies
     required: true
     value: db
-  - name: AGENT_ROLE
+  - name: CONTROLLER_ROLE
     displayName: Agent Role
-    description: The role of the endorser agent within the application - used for Network Policies
+    description: The role of the endorser controller within the application - used for Network Policies
     required: true
-    value: agent
+    value: controller
   - name: BACKUP
     displayName: Backup Target
     description:
@@ -308,63 +291,31 @@ parameters:
     description: The TAG name for this environment, e.g., dev, test, prod
     required: true
     value: dev
-  - name: APP_CONFIG_MOUNT_PATH
-    displayName: Application Config Map Mount Path
-    description: The mount path for the application Config Map.
-    required: true
-    value: /docker-entrypoint-initdb.d/
-  - name: APP_CONFIG_MAP_NAME
-    displayName: Application Config Map Name
-    description:
-      The name of the configuration map holding the data to configure the
-      application.
-    required: true
-    value: db-init
-  - name: DB_INIT_SCRIPT_FILE
-    displayName: Genesis Transactions List File
-    description: The filename containing the list of genesis transactions (ledgers) that this verifier can access.
-    required: true
-    value: 1-init.sh
   - name: POSTGRESQL_DATABASE_NAME
     displayName: PostgreSQL Database Name
     description: The name of the PostgreSQL database.
     required: true
     value: endorser_controller_db
-  - name: CONTROLLER_POSTGRESQL_USER
-    displayName: PostgreSQL Connection Username
-    description: Username for PostgreSQL user that will be used for accessing the
-      database.  Needs to be base64 encoded/
-    required: true
-    generate: expression
-    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
-  - name: CONTROLLER_POSTGRESQL_PASSWORD
-    displayName: PostgreSQL Connection Password
-    description: Password for the PostgreSQL connection user.  Needs to be base64
-      encoded/
-    required: true
-    generate: expression
-    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
-  - name: CONTROLLER_POSTGRESQL_ADMIN_USER
-    displayName: PostgreSQL Connection Username
-    description: Username for PostgreSQL user that will be used for accessing the
-      database.  Needs to be base64 encoded/
-    required: true
-    generate: expression
-    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
-  - name: CONTROLLER_POSTGRESQL_ADMIN_PASSWORD
-    displayName: PostgreSQL Connection Password
-    description: Password for the PostgreSQL connection user.  Needs to be base64
-      encoded/
-    required: true
-    generate: expression
-    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
   - name: POSTGRESQL_USER
     displayName: PostgreSQL Connection Username
     description: Username for PostgreSQL user that will be used for accessing the
       database.  Needs to be base64 encoded/
     required: true
-    value: postgres
+    generate: expression
+    from: '[a-zA-Z_][a-zA-Z0-9_]{10}'
   - name: POSTGRESQL_PASSWORD
+    displayName: PostgreSQL Connection Password
+    description: Password for the PostgreSQL connection user.  Needs to be base64
+      encoded/
+    required: true
+    generate: expression
+    from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+  - name: POSTGRESQL_ADMIN_USER
+    displayName: PostgreSQL Connection Admin Username
+    description: Username for PostgreSQL Admin.
+    required: true
+    value: postgres
+  - name: POSTGRESQL_ADMIN_PASSWORD
     displayName: PostgreSQL Admin Password
     description: Password for the 'postgres' PostgreSQL administrative account.  Needs
       to be base64 encoded.
@@ -385,7 +336,7 @@ parameters:
     displayName: Persistent Volume Size
     description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
     required: true
-    value: 5Gi
+    value: 2Gi
   - name: PERSISTENT_VOLUME_CLASS
     displayName: Persistent Volume Class name
     description: The class of the volume; gluster-file, gluster-block, gluster-file-db

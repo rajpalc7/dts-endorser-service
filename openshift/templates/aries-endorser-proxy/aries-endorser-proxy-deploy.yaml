@@ -36,6 +36,30 @@ objects:
   - kind: Route
     apiVersion: v1
     metadata:
+      name: ${NAME}${SUFFIX}-endorser-service
+      labels:
+        name: ${NAME}${SUFFIX}-endorser-service
+        app: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+      annotations:
+        haproxy.router.openshift.io/timeout: ${ROUTE_TIMEOUT}
+    spec:
+      host: ${ENDORSER_SERVICE_DOMAIN}
+      port:
+        targetPort: ${NAME}${SUFFIX}-endorser-service
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        kind: Service
+        name: ${NAME}${SUFFIX}
+        weight: 100
+
+  - kind: Route
+    apiVersion: v1
+    metadata:
       name: ${NAME}${SUFFIX}-admin
       labels:
         name: ${NAME}${SUFFIX}-admin
@@ -97,10 +121,18 @@ objects:
           port: ${{CADDY_AGENT_PORT}}
           protocol: TCP
           targetPort: ${{CADDY_AGENT_PORT}}
+        
+        
         - name: ${NAME}${SUFFIX}-admin
           port: ${{CADDY_AGENT_ADMIN_PORT}}
           protocol: TCP
           targetPort: ${{CADDY_AGENT_ADMIN_PORT}}
+
+
+        - name: ${NAME}${SUFFIX}-endorser-service
+          port: ${{CADDY_ENDORSER_SERVICE_PORT}}
+          protocol: TCP
+          targetPort: ${{CADDY_ENDORSER_SERVICE_PORT}}
       selector:
         name: ${NAME}${SUFFIX}
 
@@ -118,7 +150,8 @@ objects:
       annotations:
         description: Defines how to deploy the application server
         app.openshift.io/connects-to: >-
-          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ACAPY_AGENT_HOST}${SUFFIX}"}]
+          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ACAPY_AGENT_HOST}${SUFFIX}"},
+          {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ENDORSER_SERVICE_HOST}${SUFFIX}"}]
     spec:
       strategy:
         type: Rolling
@@ -147,12 +180,12 @@ objects:
             env: ${TAG_NAME}
         spec:
           volumes:
-            - name: ${NAME}${SUFFIX}-config-volume
+            - name: ${NAME}${SUFFIX}-caddy-config-volume
               configMap:
-                name: ${CONFIG_MAP_NAME}${SUFFIX}
+                name: ${NAME}-${CADDY_CONFIG_MAP_NAME}${SUFFIX}
                 items:
-                  - key: ${CONFIG_FILE_NAME}
-                    path: ${CONFIG_FILE_NAME}
+                  - key: ${CADDY_CONFIG_FILE_NAME}
+                    path: ${CADDY_CONFIG_FILE_NAME}
           containers:
             - name: ${NAME}${SUFFIX}
               image: " "
@@ -161,35 +194,45 @@ objects:
                   protocol: TCP
                 - containerPort: ${{CADDY_AGENT_PORT}}
                   protocol: TCP
+                - containerPort: ${{CADDY_ENDORSER_SERVICE_PORT}}
+                  protocol: TCP
               readinessProbe:
                 failureThreshold: 5
                 periodSeconds: 30
                 initialDelaySeconds: 3
                 timeoutSeconds: 40
                 httpGet:
-                  path: "/"
-                  port: ${{CADDY_AGENT_PORT}}
+                  path: "/status/ready"
+                  port: ${{CADDY_AGENT_ADMIN_PORT}}
               livenessProbe:
                 failureThreshold: 5
                 periodSeconds: 60
                 initialDelaySeconds: 30
                 timeoutSeconds: 40
                 httpGet:
-                  path: "/"
-                  port: ${{CADDY_AGENT_PORT}}
+                  path: "/status/live"
+                  port: ${{CADDY_AGENT_ADMIN_PORT}}
               env:
+                - name: ACAPY_AGENT_HOST
+                  value: ${ACAPY_AGENT_HOST}
                 - name: ACAPY_ADMIN_PORT
                   value: ${ACAPY_ADMIN_PORT}
                 - name: ACAPY_HTTP_PORT
                   value: ${ACAPY_HTTP_PORT}
                 - name: ACAPY_WS_PORT
                   value: ${ACAPY_WS_PORT}
+
                 - name: CADDY_AGENT_PORT
                   value: ${CADDY_AGENT_PORT}
                 - name: CADDY_AGENT_ADMIN_PORT
                   value: ${CADDY_AGENT_ADMIN_PORT}
-                - name: ACAPY_AGENT_HOST
-                  value: ${ACAPY_AGENT_HOST} 
+
+                - name: CADDY_ENDORSER_SERVICE_PORT
+                  value: ${CADDY_ENDORSER_SERVICE_PORT}
+                - name: ENDORSER_SERVICE_HOST
+                  value: ${ENDORSER_SERVICE_HOST}
+                - name: ENDORSER_SERVICE_PORT
+                  value: ${ENDORSER_SERVICE_PORT}
               resources:
                 requests:
                   cpu: ${CPU_REQUEST}
@@ -198,9 +241,9 @@ objects:
                   cpu: ${CPU_LIMIT}
                   memory: ${MEMORY_LIMIT}
               volumeMounts:
-                - name: ${NAME}${SUFFIX}-config-volume
-                  mountPath: ${CONFIG_MOUNT_PATH}${CONFIG_FILE_NAME}
-                  subPath: ${CONFIG_FILE_NAME}
+                - name: ${NAME}${SUFFIX}-caddy-config-volume
+                  mountPath: ${CADDY_CONFIG_MOUNT_PATH}${CADDY_CONFIG_FILE_NAME}
+                  subPath: ${CADDY_CONFIG_FILE_NAME}
 
   - kind: HorizontalPodAutoscaler
     apiVersion: autoscaling/v1
@@ -240,66 +283,6 @@ parameters:
     description: The TAG name for this environment, e.g., dev, test, prod.
     required: true
     value: dev
-  - name: ACAPY_AGENT_HOST
-    displayName: Agent Host
-    description: Agent Host
-    required: true
-    value: aries-endorser-agent
-  - name: ROUTE_TIMEOUT
-    displayName: Route Timeout
-    description: Route timeout.
-    required: true
-    value: "60"
-  - name: CONFIG_MOUNT_PATH
-    displayName: Config Mount Path
-    description: Location for the config file inside the nginx container
-    required: true
-    value: /etc/caddy/
-  - name: CONFIG_FILE_NAME
-    displayName: Config File Path
-    description: Name of the nginx config file
-    required: true
-    value: Caddyfile
-  - name: CONFIG_MAP_NAME
-    displayName: Config Map Name
-    description: name of the nginx config map
-    required: true
-    value: caddy-conf
-  - name: APPLICATION_ADMIN_DOMAIN
-    displayName: Application Hostname
-    description: The exposed hostname that will route to the service, if left blank a value will be defaulted.
-    required: false
-    value: aries-endorser-agent-admin-dev.apps.silver.devops.gov.bc.ca
-  - name: APPLICATION_DOMAIN
-    displayName: Application Hostname
-    description: The exposed hostname that will route to the service, if left blank a value will be defaulted.
-    required: false
-    value: aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
-  - name: ACAPY_ADMIN_PORT
-    displayName: Agent Port
-    description: Agent Port
-    required: true
-    value: "8051"
-  - name: ACAPY_HTTP_PORT
-    displayName: Agent Port
-    description: Agent Port
-    required: true
-    value: "8050"
-  - name: ACAPY_WS_PORT
-    displayName: Agent Port
-    description: Agent Port
-    required: true
-    value: "8052"
-  - name: CADDY_AGENT_ADMIN_PORT
-    displayName: Agent Port
-    description: Agent Port
-    required: true
-    value: "2016"
-  - name: CADDY_AGENT_PORT
-    displayName: Agent Port
-    description: Agent Port
-    required: true
-    value: "2015"
   - name: NAMESPACE
     displayName: The target namespace for the resources.
     required: true
@@ -320,6 +303,93 @@ parameters:
     description: The namespace of the OpenShift project containing the imagestream for the application.
     value: 4a9599-tools
 
+  - name: ACAPY_AGENT_HOST
+    displayName: Agent Host
+    description: Agent Host
+    required: true
+    value: aries-endorser-agent
+
+  - name: ENDORSER_SERVICE_HOST
+    displayName: Endorser Service Host
+    description: Hostname for the endorser controller service
+    required: true
+    value: aries-endorser-api
+  - name: ENDORSER_SERVICE_PORT
+    displayName: Endorser Service Port
+    description: Port number for the endorser controller service
+    required: true
+    value: '5000'
+
+  - name: ROUTE_TIMEOUT
+    displayName: Route Timeout
+    description: Route timeout.
+    required: true
+    value: "60"
+
+  - name: CADDY_CONFIG_MOUNT_PATH
+    displayName: Config Mount Path
+    description: Location for the config file inside the container
+    required: true
+    value: /etc/caddy/
+  - name: CADDY_CONFIG_FILE_NAME
+    displayName: Config File Path
+    description: Name of the config file
+    required: true
+    value: Caddyfile
+  - name: CADDY_CONFIG_MAP_NAME
+    displayName: Config Map Name
+    description: name of the config map
+    required: true
+    value: caddy-conf
+
+  - name: APPLICATION_ADMIN_DOMAIN
+    displayName: Application Hostname
+    description: The exposed hostname that will route to the service, if left blank a value will be defaulted.
+    required: false
+    value: aries-endorser-agent-admin-dev.apps.silver.devops.gov.bc.ca
+  - name: APPLICATION_DOMAIN
+    displayName: Application Hostname
+    description: The exposed hostname that will route to the service, if left blank a value will be defaulted.
+    required: false
+    value: aries-endorser-agent-dev.apps.silver.devops.gov.bc.ca
+  - name: ENDORSER_SERVICE_DOMAIN
+    displayName: Application Hostname
+    description: The exposed hostname that will route to the service, if left blank a value will be defaulted.
+    required: false
+    value: aries-endorser-service-dev.apps.silver.devops.gov.bc.ca
+
+  - name: ACAPY_ADMIN_PORT
+    displayName: Agent Port
+    description: Agent Port
+    required: true
+    value: "8051"
+  - name: ACAPY_HTTP_PORT
+    displayName: Agent Port
+    description: Agent Port
+    required: true
+    value: "8050"
+  - name: ACAPY_WS_PORT
+    displayName: Agent Port
+    description: Agent Port
+    required: true
+    value: "8052"
+
+  - name: CADDY_AGENT_PORT
+    displayName: Agent Port
+    description: Agent Port
+    required: true
+    value: "2015"
+  - name: CADDY_AGENT_ADMIN_PORT
+    displayName: Agent Port
+    description: Agent Port
+    required: true
+    value: "2016"
+  - name: CADDY_ENDORSER_SERVICE_PORT
+    displayName: Agent Port
+    description: Agent Port
+    required: true
+    value: "2017"
+
   - name: MIN_REPLICAS
     displayName: Minimum Replicas
     description: The minimum number of pods to have running.
@@ -335,7 +405,7 @@ parameters:
     displayName: Resources CPU Request
     description: The resources CPU request (in cores) for this build.
     required: true
-    value: 10m
+    value: 150m
   - name: CPU_LIMIT
     displayName: Resources CPU Limit
     description: The resources CPU limit (in cores) for this build.
@@ -345,7 +415,7 @@ parameters:
     displayName: Resources Memory Request
     description: The resources Memory request (in Mi, Gi, etc) for this build.
     required: true
-    value: 10Mi
+    value: 256Mi
   - name: MEMORY_LIMIT
     displayName: Resources Memory Limit
     description: The resources Memory limit (in Mi, Gi, etc) for this build.

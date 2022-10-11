@@ -29,7 +29,7 @@ objects:
                   environment: ${TAG_NAME}
           ports:
             - protocol: TCP
-              port: ${ENDORSER_SERVICE_PORT}
+              port: ${{ENDORSER_SERVICE_PORT}}
         - from:
             - podSelector:
                 matchLabels:
@@ -42,7 +42,7 @@ objects:
                   environment: ${TAG_NAME}
           ports:
             - protocol: TCP
-              port: ${ENDORSER_SERVICE_PORT}
+              port: ${{ENDORSER_SERVICE_PORT}}
       podSelector:
         matchLabels:
           role: ${ROLE}
@@ -62,9 +62,9 @@ objects:
     spec:
       ports:
         - name: ${NAME}${SUFFIX}-public
-          port: ${ENDORSER_SERVICE_PORT}
+          port: ${{ENDORSER_SERVICE_PORT}}
           protocol: TCP
-          targetPort: ${ENDORSER_SERVICE_PORT}
+          targetPort: ${{ENDORSER_SERVICE_PORT}}
       selector:
         name: ${NAME}${SUFFIX}
 
@@ -81,11 +81,6 @@ objects:
         env: ${TAG_NAME}
     stringData:
       endorser-admin-api-key: ${ENDORSER_API_ADMIN_KEY}
-      controller-database-user: ${CONTROLLER_POSTGRESQL_USER}
-      controller-database-password: ${CONTROLLER_POSTGRESQL_PASSWORD}
-      controller-admin-user: ${CONTROLLER_POSTGRESQL_ADMIN_USER}
-      controller-admin-password: ${CONTROLLER_POSTGRESQL_ADMIN_PASSWORD}
-      admin-api-key: ${ACAPY_API_ADMIN_KEY}
       webhook-api-key: ${ACAPY_WEBHOOK_URL_API_KEY}
     type: Opaque
 
@@ -103,7 +98,8 @@ objects:
       annotations:
         description: Defines how to deploy the application server
         app.openshift.io/connects-to: >-
-          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ACAPY_ADMIN_HOST}${SUFFIX}"}]
+          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ACAPY_ADMIN_HOST}${SUFFIX}"},
+          {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}"}]
     spec:
       replicas: 1
       selector:
@@ -122,49 +118,37 @@ objects:
         spec:
           containers:
             - name: ${NAME}${SUFFIX}
-              command:
-                - bash
-                - -c
-                - $(./docker-entrypoint.sh
-                  );
               env:
-                - name: WEB_CONCURRENCY
-                  value: ${WEB_CONCURRENCY}$
                 - name: CONTROLLER_POSTGRESQL_HOST
                   value: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
                 - name: CONTROLLER_POSTGRESQL_PORT
                   value: ${CONTROLLER_POSTGRESQL_PORT}
+                - name: CONTROLLER_POSTGRESQL_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-name
                 - name: CONTROLLER_POSTGRESQL_USER
                   valueFrom:
                     secretKeyRef:
-                      name: ${CONTROLLER_POSTGRESQL_USER}${SUFFIX}
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
                       key: database-user
                 - name: CONTROLLER_POSTGRESQL_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: ${CONTROLLER_POSTGRESQL_PASSWORD}${SUFFIX}
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
                       key: database-password
                 - name: CONTROLLER_POSTGRESQL_ADMIN_USER
                   valueFrom:
                     secretKeyRef:
-                      name: ${CONTROLLER_POSTGRESQL_ADMIN_USER}${SUFFIX}
-                      key: admin-user
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-user
                 - name: CONTROLLER_POSTGRESQL_ADMIN_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: ${CONTROLLER_POSTGRESQL_ADMIN_PASSWORD}${SUFFIX}
-                      key: admin-password
-                - name: ENDORSER_SERVICE_PORT
-                  value: ${ENDORSER_SERVICE_PORT}
-                - name: ENDORSER_ENV
-                  value: ${ENDORSER_ENV}
-                - name: ENDORSER_API_ADMIN_USER
-                  value: ${ENDORSER_API_ADMIN_USER}
-                - name: ENDORSER_API_ADMIN_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${ENDORSER_API_ADMIN_KEY}${SUFFIX}
-                      key: api-password
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-password
+
                 - name: ACAPY_ADMIN_HOST
                   value: ${ACAPY_ADMIN_HOST}
                 - name: ACAPY_ADMIN_URL
@@ -172,37 +156,53 @@ objects:
                 - name: ACAPY_API_ADMIN_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: ${ACAPY_API_ADMIN_KEY}${SUFFIX}
+                      name: ${ACAPY_ADMIN_HOST}${SUFFIX}
                       key: admin-api-key
                 - name: ACAPY_WEBHOOK_URL_API_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: ${ACAPY_WEBHOOK_URL_API_KEY}${SUFFIX}
+                      name: ${NAME}${SUFFIX}
                       key: webhook-api-key
+
+                - name: ENDORSER_SERVICE_PORT
+                  value: ${ENDORSER_SERVICE_PORT}
+                - name: ENDORSER_API_ADMIN_USER
+                  value: ${ENDORSER_API_ADMIN_USER}
+                - name: ENDORSER_API_ADMIN_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: endorser-admin-api-key
+
+                - name: ENDORSER_ENV
+                  value: ${TAG_NAME}
                 - name: ENDORSER_AUTO_ACCEPT_CONNECTIONS
                   value: ${ENDORSER_AUTO_ACCEPT_CONNECTIONS}
                 - name: ENDORSER_AUTO_ACCEPT_AUTHORS
                   value: ${ENDORSER_AUTO_ACCEPT_AUTHORS}
                 - name: ENDORSER_AUTO_ENDORSE_REQUESTS
                   value: ${ENDORSER_AUTO_ENDORSE_REQUESTS}
+                - name: WEB_CONCURRENCY
+                  value: ${WEB_CONCURRENCY}
+
                 - name: LOG_LEVEL
                   value: ${LOG_LEVEL}
               image: " "
               ports:
-                - containerPort: ${ENDORSER_SERVICE_PORT}
+                - containerPort: ${{ENDORSER_SERVICE_PORT}}
                   protocol: TCP
               readinessProbe:
                 timeoutSeconds: 30
                 initialDelaySeconds: 3
                 httpGet:
                   path: "/"
-                  port: ${ENDORSER_SERVICE_PORT}
+                  port: ${{ENDORSER_SERVICE_PORT}}
               livenessProbe:
                 timeoutSeconds: 30
                 initialDelaySeconds: 300
                 httpGet:
                   path: "/"
-                  port: ${ENDORSER_SERVICE_PORT}
+                  port: ${{ENDORSER_SERVICE_PORT}}
               imagePullPolicy: IfNotPresent
               resources:
                 limits:
@@ -229,7 +229,6 @@ objects:
               kind: ImageStreamTag
               name: ${NAME}:${TAG_NAME}
               namespace: ${IMAGE_NAMESPACE}
-
 parameters:
   - name: NAME
     displayName: Name
@@ -263,12 +262,12 @@ parameters:
     value: controller
   - name: AGENT_ROLE
     displayName: Agent Role
-    description: The role of the email verification service within the application - used for Network Policies
+    description: The role of the agent service within the application - used for Network Policies
     required: true
-    value: controller
+    value: agent
   - name: PROXY_ROLE
     displayName: Proxy Role
-    description: The role of the nginx proxy within the application - used for Network Policies
+    description: The role of the proxy within the application - used for Network Policies
     required: true
     value: proxy
   - name: IMAGE_NAMESPACE
@@ -289,10 +288,6 @@ parameters:
     displayName: Endorser Service Port
     description: Published port number to access endorser admin api.
     value: "5000"
-  - name: ENDORSER_ENV
-    displayName: Endorser Environment
-    description: Tag to indicate environment.
-    value: "dev"
   - name: ENDORSER_API_ADMIN_USER
     displayName: Agent Admin API User
     description: The ID used to authenticate client requests to the admin api.
@@ -314,35 +309,7 @@ parameters:
     description: The db port of the Postgres deployment
     required: true
     value: "5432"
-  - name: CONTROLLER_POSTGRESQL_DB
-    displayName: Postgresql Database Name
-    description: The Name of the Postgres database
-    required: true
-    value: "endorser_controller_db"
-  - name: CONTROLLER_POSTGRESQL_USER
-    displayName: Postgresql Database User
-    description: The user id of the Postgres deployment
-    required: false
-    generate: expression
-    from: "[a-zA-Z0-9]{32}"
-  - name: CONTROLLER_POSTGRESQL_PASSWORD
-    displayName: Postgresql Database Password
-    description: The database password of the Postgres deployment
-    required: false
-    generate: expression
-    from: "[a-zA-Z0-9]{32}"
-  - name: CONTROLLER_POSTGRESQL_ADMIN_USER
-    displayName: Postgresql Admin User
-    description: The admin user id of the Postgres deployment
-    required: false
-    generate: expression
-    from: "[a-zA-Z0-9]{32}"
-  - name: CONTROLLER_POSTGRESQL_ADMIN_PASSWORD
-    displayName: Postgresql Admin Password
-    description: The admin database password of the Postgres deployment
-    required: false
-    generate: expression
-    from: "[a-zA-Z0-9]{32}"
+
   - name: ACAPY_ADMIN_HOST
     displayName: Aca-py host name
     description: Host name for the aca-py agent
@@ -353,12 +320,6 @@ parameters:
     description: The admin url of the endorser aca-py agent
     required: true
     value: "http://aries-endorser-agent:8051"
-  - name: ACAPY_API_ADMIN_KEY
-    displayName: Aca-py Admin API Key
-    description: API key for the aca-py admin api.
-    required: true
-    generate: expression
-    from: "[a-zA-Z0-9]{32}"
   - name: ENDORSER_AUTO_ACCEPT_CONNECTIONS
     displayName: Connection Auto-accept Flag
     description: Flag to specify whether to globally auto-accept connection requests
@@ -385,6 +346,7 @@ parameters:
     description: Log Level
     required: true
     value: INFO
+
   - name: CPU_REQUEST
     displayName: Resources CPU Request
     description: The resources CPU request (in cores) for this build.

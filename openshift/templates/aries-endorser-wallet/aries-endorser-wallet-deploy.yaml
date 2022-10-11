@@ -13,8 +13,9 @@ objects:
       labels:
         name: ${NAME}${SUFFIX}
         app: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
         env: ${TAG_NAME}
-        backup: ${BACKUP}
     spec:
       description: |
         Allow the agent(s) and the backup container to access the wallet.
@@ -24,6 +25,7 @@ objects:
                 matchLabels:
                   role: ${AGENT_ROLE}
                   app: ${APP_NAME}${SUFFIX}
+                  app-group: ${APP_GROUP}
                   env: ${TAG_NAME}
               namespaceSelector:
                 matchLabels:
@@ -33,6 +35,7 @@ objects:
                 matchLabels:
                   role: ${BACKUP_ROLE}
                   app: ${APP_NAME}${SUFFIX}
+                  app-group: ${APP_GROUP}
                   env: ${TAG_NAME}
               namespaceSelector:
                 matchLabels:
@@ -40,7 +43,7 @@ objects:
                   environment: ${TAG_NAME}
           ports:
             - protocol: TCP
-              port: 5432
+              port: ${{PORT}}
       podSelector:
         matchLabels:
           role: ${ROLE}
@@ -58,7 +61,6 @@ objects:
         app-group: ${APP_GROUP}
         role: ${ROLE}
         env: ${TAG_NAME}
-        template: ${NAME}${SUFFIX}
         backup: ${BACKUP}
     spec:
       strategy:
@@ -120,7 +122,10 @@ objects:
                       name: ${NAME}${SUFFIX}
                       key: admin-password
                 - name: POSTGRESQL_DATABASE
-                  value: ${POSTGRESQL_DATABASE_NAME}
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: database-name
               resources:
                 requests:
                   cpu: ${CPU_REQUEST}
@@ -174,8 +179,6 @@ objects:
         app-group: ${APP_GROUP}  
         role: ${ROLE}
         env: ${TAG_NAME}
-        template: ${NAME}${SUFFIX}
-        backup: ${BACKUP}
     spec:
       storageClassName: ${PERSISTENT_VOLUME_CLASS}
       accessModes:
@@ -194,11 +197,11 @@ objects:
         app-group: ${APP_GROUP}
         role: ${ROLE}
         env: ${TAG_NAME}
-        backup: ${BACKUP}
     stringData:
       admin-password: ${POSTGRESQL_ADMIN_PASSWORD}
       database-password: ${POSTGRESQL_PASSWORD}
       database-user: ${POSTGRESQL_USER}
+      database-name: ${POSTGRESQL_DATABASE_NAME}
     type: Opaque
   - kind: Service
     apiVersion: v1
@@ -211,8 +214,6 @@ objects:
         app-group: ${APP_GROUP}
         role: ${ROLE}
         env: ${TAG_NAME}
-        template: ${NAME}${SUFFIX}
-        backup: ${BACKUP}
       annotations:
         template.openshift.io/expose-uri: postgres://{.spec.clusterIP}:{.spec.ports[?(.name=="${NAME}${SUFFIX}")].port}
     spec:
@@ -242,6 +243,11 @@ parameters:
     description: The name assigned to all of the deployments in this project.
     required: true
     value: aries-endorser-service
+  - name: NAMESPACE_NAME
+    displayName: NameSpace name
+    description: name of the project namespace
+    required: true
+    value: 4a9599
   - name: SUFFIX
     displayName: Suffix
     description: A name suffix used for all objects
@@ -274,11 +280,6 @@ parameters:
     description: The namespace of the OpenShift project containing the imagestream
       for the application.
     value: 4a9599-tools
-  - name: NAMESPACE_NAME
-    displayName: NameSpace name
-    description: name of the project namespace
-    required: true
-    value: 4a9599
   - name: SOURCE_IMAGE_NAME
     displayName: Source Image Name
     description: The name of the image to use for this resource.
@@ -293,7 +294,7 @@ parameters:
     displayName: PostgreSQL Database Name
     description: The name of the PostgreSQL database.
     required: true
-    value: aries-endorser-wallet
+    value: default_wallet
   - name: POSTGRESQL_USER
     displayName: PostgreSQL Connection Username
     description: Username for PostgreSQL user that will be used for accessing the
@@ -315,6 +316,11 @@ parameters:
     required: true
     generate: expression
     from: '[a-zA-Z0-9_~!@#$%^&*()-=<>,.?;:|]{16}'
+  - name: PORT
+    displayName: Port
+    description: The port on which the database service will listen.
+    required: true
+    value: "5432"
   - name: MOUNT_PATH
     displayName: Mount Path
     description: The path to mount the persistent volume.
@@ -324,7 +330,7 @@ parameters:
     displayName: Persistent Volume Size
     description: The size of the persistent volume , e.g. 512Mi, 1Gi, 2Gi.
     required: true
-    value: 5Gi
+    value: 1Gi
   - name: PERSISTENT_VOLUME_CLASS
     displayName: Persistent Volume Class name
     description: The class of the volume; gluster-file, gluster-block, gluster-file-db

@@ -11,16 +11,13 @@ fi
 # ------------------------------------------------------------------------
 # The generated config map is used to update the Backup configuration.
 # ========================================================================
-CONFIG_MAP_NAME=caddy-conf
-SOURCE_FILE=$( dirname "$0" )/caddy/Caddyfile
-
+CONFIG_MAP_NAME=${NAME}-${CADDY_CONFIG_MAP_NAME:-caddy-conf}
+SOURCE_FILE=$( dirname "$0" )/config/Caddyfile
 OUTPUT_FORMAT=json
 OUTPUT_FILE=${CONFIG_MAP_NAME}-configmap_DeploymentConfig.json
 
 printStatusMsg "Generating ConfigMap; ${CONFIG_MAP_NAME} ..."
-generateConfigMap "${CONFIG_MAP_NAME}" "${SOURCE_FILE}" "${OUTPUT_FORMAT}" "${OUTPUT_FILE}"
-
-
+generateConfigMap "${CONFIG_MAP_NAME}${SUFFIX}" "${SOURCE_FILE}" "${OUTPUT_FORMAT}" "${OUTPUT_FILE}"
 
 unset SPECIALDEPLOYPARMS
 echo ${SPECIALDEPLOYPARMS}

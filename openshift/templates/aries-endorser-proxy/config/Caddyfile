@@ -42,3 +42,18 @@
         level DEBUG
     }
 }
+
+# This route is required untill there is a UI for the
+# Endorser service
+:{$CADDY_ENDORSER_SERVICE_PORT} {
+    handle {
+        reverse_proxy http://{$ENDORSER_SERVICE_HOST}:{$ENDORSER_SERVICE_PORT}
+    }
+
+    # What logs should look like.
+    log {
+        output stdout 
+        # format single_field common_log
+        level DEBUG
+    }
+}

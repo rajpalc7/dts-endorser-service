@@ -126,6 +126,8 @@ objects:
                     secretKeyRef:
                       name: ${NAME}${SUFFIX}
                       key: database-name
+                - name: PGCRYPTO_EXTENSION
+                  value: ${PGCRYPTO_EXTENSION}
               resources:
                 requests:
                   cpu: ${CPU_REQUEST}
@@ -327,6 +329,13 @@ parameters:
     description: The port on which the database service will listen.
     required: true
     value: "5432"
+
+  - name: PGCRYPTO_EXTENSION
+    displayName: Install pgcrypto Extension
+    description: Install pgcrypto extension
+    required: true
+    value: 'Y'
+
   - name: MOUNT_PATH
     displayName: Mount Path
     description: The path to mount the persistent volume.

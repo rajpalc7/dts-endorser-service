@@ -324,7 +324,7 @@ parameters:
     displayName: Route Timeout
     description: Route timeout.
     required: true
-    value: "60"
+    value: "60s"
 
   - name: CADDY_CONFIG_MOUNT_PATH
     displayName: Config Mount Path

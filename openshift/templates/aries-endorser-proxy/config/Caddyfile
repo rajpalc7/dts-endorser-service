@@ -43,11 +43,15 @@
     }
 }
 
-# This route is required untill there is a UI for the
-# Endorser service
+# This route is required until there is a UI for the Endorser service
 :{$CADDY_ENDORSER_SERVICE_PORT} {
+
     handle {
-        reverse_proxy http://{$ENDORSER_SERVICE_HOST}:{$ENDORSER_SERVICE_PORT}
+        reverse_proxy {$ENDORSER_SERVICE_HOST}:{$ENDORSER_SERVICE_PORT} {
+            trusted_proxies private_ranges
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {host}
+        }
     }
 
     # What logs should look like.

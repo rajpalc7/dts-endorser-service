@@ -1,0 +1,19 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/aries-endorser-api/aries-endorser-api-build.yaml
+#=========================================================
+NAME=aries-endorser-api
+SUFFIX=
+APP_NAME=aries-endorser-service
+GIT_REPO_URL=https://github.com/bcgov/aries-endorser-service.git
+GIT_REF=main
+SOURCE_CONTEXT_DIR=endorser
+DOCKER_FILE_PATH=Dockerfile.endorser
+SOURCE_IMAGE_KIND=DockerImage
+SOURCE_IMAGE_REGISTRY=artifacts.developer.gov.bc.ca/docker-remote/
+SOURCE_IMAGE_NAME=python
+SOURCE_IMAGE_TAG=3.10-slim-buster
+OUTPUT_IMAGE_TAG=latest
+CPU_LIMIT=1
+MEMORY_LIMIT=4Gi

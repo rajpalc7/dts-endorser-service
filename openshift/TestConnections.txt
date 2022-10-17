@@ -1,0 +1,11 @@
+# Uses the 'testConnection' script from https://github.com/BCDevOps/openshift-developer-tools
+# Example:
+# echo -e "aries-endorser-api\n aries-endorser-db\n aries-endorser-agent\n aries-endorser-backup\n aries-endorser-wallet\n aries-endorser-proxy"  | xargs -I {} testConnection -n 4a9599-dev -f TestConnections.txt -p {}
+
+google.com:80
+aries-endorser-wallet:5432
+aries-endorser-agent:8050
+aries-endorser-agent:8051
+aries-endorser-agent:8052
+aries-endorser-db:5432
+aries-endorser-api:5000

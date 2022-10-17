@@ -1,0 +1,52 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/aries-endorser-agent/aries-endorser-agent-deploy.yaml
+#=========================================================
+# NAME=aries-endorser-agent
+# APP_GROUP=aries-endorser-service
+# NAMESPACE_NAME=4a9599
+# APP_NAME=aries-endorser-service
+# SUFFIX=
+# ROLE=agent
+# CONTROLLER_ROLE=controller
+# PROXY_ROLE=proxy
+# IMAGE_NAMESPACE=4a9599-tools
+TAG_NAME=prod
+# ACAPY_READ_ONLY_LEDGER=true
+# ADMIN_API_KEY=[a-zA-Z0-9]{32}
+# ACAPY_AUTO_PROVISION=true
+# ACAPY_EMIT_NEW_DIDCOMM_PREFIX=true
+# ACAPY_AUTO_PING_CONNECTION=true
+# ACAPY_MONITOR_PING=true
+# ACAPY_PUBLIC_INVITES=true
+# ACAPY_NOTIFY_REVOCATION=true
+# ACAPY_MONITOR_REVOCATION_NOTIFICATION=true
+# AGENT_ADMIN_PORT=8051
+# AGENT_HTTP_PORT=8050
+# AGENT_WS_PORT=8052
+AGENT_BASE_URL=https://aries-endorser-agent.apps.silver.devops.gov.bc.ca
+AGENT_BASE_WS_URL=wss://aries-endorser-agent.apps.silver.devops.gov.bc.ca
+# ACAPY_IMAGE_URL=
+ACAPY_GENESIS_URL=https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/prod/pool_transactions_genesis
+# ACAPY_ENDORSER_ROLE=endorser
+# ACAPY_LABEL=Government of British Columbia - Endorser
+# ACAPY_WALLET_TYPE=askar
+# ACAPY_WALLET_STORAGE_TYPE=postgres_storage
+# WALLET_HOST=aries-endorser-wallet
+# WALLET_HOST_PORT=5432
+# WALLET_STORAGE_CONFIG={\"url\":\"${POSTGRESQL_WALLET_HOST}:${POSTGRESQL_WALLET_PORT}\",\"wallet_scheme\":\"DatabasePerWallet\",\"max_connections\":5}
+# WALLET_STORAGE_CREDS={\"account\":\"${POSTGRESQL_WALLET_USER}\",\"password\":\"${POSTGRESQL_WALLET_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_WALLET_ADMIN_PASSWORD}\"}
+# WALLET_CREDENTIAL_STORE_NAME=aries-endorser-agent-wallet-credentials
+# WALLET_KEY=[a-zA-Z0-9]{32}
+# WALLET_SEED=[a-zA-Z0-9]{32}
+# WALLET_DID=[a-zA-Z0-9]{16}
+# WALLET_SUFFIX=
+# ENDORSER_SERVICE_HOST=aries-endorser-api
+# ENDORSER_SERVICE_PORT=5000
+# CONTROLLER_WEBHOOK_URL=http://aries-endorser-api:5000/webhook#tbd
+# LOG_LEVEL=INFO
+# CPU_REQUEST=10m
+# CPU_LIMIT=250m
+# MEMORY_REQUEST=10Mi
+# MEMORY_LIMIT=1Gi

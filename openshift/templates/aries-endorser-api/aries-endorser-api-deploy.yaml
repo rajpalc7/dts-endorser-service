@@ -1,0 +1,369 @@
+---
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ${NAME}${SUFFIX}
+objects:
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        name: ${NAME}${SUFFIX}
+        app: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    spec:
+      description: Allow endorser controller ports to be accessed by agent and proxy
+      ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  role: ${AGENT_ROLE}
+                  app: ${APP_NAME}${SUFFIX}
+                  env: ${TAG_NAME}
+              namespaceSelector:
+                matchLabels:
+                  name: ${NAMESPACE_NAME}
+                  environment: ${TAG_NAME}
+          ports:
+            - protocol: TCP
+              port: ${{ENDORSER_SERVICE_PORT}}
+        - from:
+            - podSelector:
+                matchLabels:
+                  role: ${PROXY_ROLE}
+                  app: ${APP_NAME}${SUFFIX}
+                  env: ${TAG_NAME}
+              namespaceSelector:
+                matchLabels:
+                  name: ${NAMESPACE_NAME}
+                  environment: ${TAG_NAME}
+          ports:
+            - protocol: TCP
+              port: ${{ENDORSER_SERVICE_PORT}}
+      podSelector:
+        matchLabels:
+          role: ${ROLE}
+          app: ${APP_NAME}${SUFFIX}
+          env: ${TAG_NAME}
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        app: ${APP_NAME}${SUFFIX}
+        name: ${NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    spec:
+      ports:
+        - name: ${NAME}${SUFFIX}-public
+          port: ${{ENDORSER_SERVICE_PORT}}
+          protocol: TCP
+          targetPort: ${{ENDORSER_SERVICE_PORT}}
+      selector:
+        name: ${NAME}${SUFFIX}
+
+  - kind: Secret
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        name: ${NAME}${SUFFIX}
+        app: ${APP_NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+    stringData:
+      endorser-admin-api-key: ${ENDORSER_API_ADMIN_KEY}
+      webhook-api-key: ${ACAPY_WEBHOOK_URL_API_KEY}
+    type: Opaque
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: ${NAME}${SUFFIX}
+      labels:
+        app: ${APP_NAME}${SUFFIX}
+        name: ${NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
+        app-group: ${APP_GROUP}
+        role: ${ROLE}
+        env: ${TAG_NAME}
+      annotations:
+        description: Defines how to deploy the application server
+        app.openshift.io/connects-to: >-
+          [{"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${ACAPY_ADMIN_HOST}${SUFFIX}"},
+          {"apiVersion":"apps.openshift.io/v1","kind":"DeploymentConfig","name":"${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}"}]
+    spec:
+      replicas: 1
+      selector:
+        name: ${NAME}${SUFFIX}
+      strategy:
+        type: Rolling
+      template:
+        metadata:
+          name: ${NAME}${SUFFIX}
+          labels:
+            app: ${APP_NAME}${SUFFIX}
+            name: ${NAME}${SUFFIX}
+            app-group: ${APP_GROUP}
+            role: ${ROLE}
+            env: ${TAG_NAME}
+        spec:
+          containers:
+            - name: ${NAME}${SUFFIX}
+              env:
+                - name: CONTROLLER_POSTGRESQL_HOST
+                  value: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                - name: CONTROLLER_POSTGRESQL_PORT
+                  value: ${CONTROLLER_POSTGRESQL_PORT}
+                - name: CONTROLLER_POSTGRESQL_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-name
+                - name: CONTROLLER_POSTGRESQL_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-user
+                - name: CONTROLLER_POSTGRESQL_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-password
+                - name: CONTROLLER_POSTGRESQL_ADMIN_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-user
+                - name: CONTROLLER_POSTGRESQL_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${CONTROLLER_POSTGRESQL_HOST}${SUFFIX}
+                      key: database-password
+
+                - name: ACAPY_ADMIN_HOST
+                  value: ${ACAPY_ADMIN_HOST}
+                - name: ACAPY_ADMIN_URL
+                  value: ${ACAPY_ADMIN_URL}
+                - name: ACAPY_API_ADMIN_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${ACAPY_ADMIN_HOST}${SUFFIX}
+                      key: admin-api-key
+                - name: ACAPY_WEBHOOK_URL_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: webhook-api-key
+
+                - name: ENDORSER_SERVICE_PORT
+                  value: ${ENDORSER_SERVICE_PORT}
+                - name: ENDORSER_API_ADMIN_USER
+                  value: ${ENDORSER_API_ADMIN_USER}
+                - name: ENDORSER_API_ADMIN_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}${SUFFIX}
+                      key: endorser-admin-api-key
+
+                - name: ENDORSER_ENV
+                  value: ${TAG_NAME}
+                - name: ENDORSER_AUTO_ACCEPT_CONNECTIONS
+                  value: ${ENDORSER_AUTO_ACCEPT_CONNECTIONS}
+                - name: ENDORSER_AUTO_ACCEPT_AUTHORS
+                  value: ${ENDORSER_AUTO_ACCEPT_AUTHORS}
+                - name: ENDORSER_AUTO_ENDORSE_REQUESTS
+                  value: ${ENDORSER_AUTO_ENDORSE_REQUESTS}
+                - name: WEB_CONCURRENCY
+                  value: ${WEB_CONCURRENCY}
+
+                - name: LOG_LEVEL
+                  value: ${LOG_LEVEL}
+              image: " "
+              ports:
+                - containerPort: ${{ENDORSER_SERVICE_PORT}}
+                  protocol: TCP
+              readinessProbe:
+                timeoutSeconds: 30
+                initialDelaySeconds: 3
+                httpGet:
+                  path: "/"
+                  port: ${{ENDORSER_SERVICE_PORT}}
+              livenessProbe:
+                timeoutSeconds: 30
+                initialDelaySeconds: 300
+                httpGet:
+                  path: "/"
+                  port: ${{ENDORSER_SERVICE_PORT}}
+              imagePullPolicy: IfNotPresent
+              resources:
+                limits:
+                  cpu: ${CPU_LIMIT}
+                  memory: ${MEMORY_LIMIT}
+                requests:
+                  cpu: ${CPU_REQUEST}
+                  memory: ${MEMORY_REQUEST}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - ${NAME}${SUFFIX}
+            from:
+              kind: ImageStreamTag
+              name: ${NAME}:${TAG_NAME}
+              namespace: ${IMAGE_NAMESPACE}
+parameters:
+  - name: NAME
+    displayName: Name
+    description: The name assigned to all the objects defined in this template.
+    required: true
+    value: aries-endorser-api
+  - name: APP_GROUP
+    displayName: App Group
+    description: The name assigned to all of the deployments in this project.
+    required: true
+    value: aries-endorser-service
+  - name: NAMESPACE_NAME
+    displayName: NameSpace name
+    description: name of the project namespace
+    required: true
+    value: 4a9599
+  - name: APP_NAME
+    displayName: App Name
+    description: Used to group components together in the OpenShift console.
+    required: true
+    value: aries-endorser-service
+  - name: SUFFIX
+    displayName: Suffix
+    description: A name suffix used for all objects
+    required: false
+    value: ''
+  - name: ROLE
+    displayName: Role
+    description: The role of this service within the application - used for Network Policies
+    required: true
+    value: controller
+  - name: AGENT_ROLE
+    displayName: Agent Role
+    description: The role of the agent service within the application - used for Network Policies
+    required: true
+    value: agent
+  - name: PROXY_ROLE
+    displayName: Proxy Role
+    description: The role of the proxy within the application - used for Network Policies
+    required: true
+    value: proxy
+  - name: IMAGE_NAMESPACE
+    displayName: Namespace containing application images.
+    required: true
+    value: 4a9599-tools
+  - name: TAG_NAME
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod.
+    required: true
+    value: dev
+  - name: WEB_CONCURRENCY
+    displayName: Web Concurrency Level
+    description: Web Concurrency Level.
+    required: true
+    value: "2"
+  - name: ENDORSER_SERVICE_PORT
+    displayName: Endorser Service Port
+    description: Published port number to access endorser admin api.
+    value: "5000"
+  - name: ENDORSER_API_ADMIN_USER
+    displayName: Agent Admin API User
+    description: The ID used to authenticate client requests to the admin api.
+    required: true
+    value: "endorser-admin"
+  - name: ENDORSER_API_ADMIN_KEY
+    displayName: Agent Admin API Key
+    description: The key used to authenticate client requests to the admin api.
+    required: false
+    generate: expression
+    from: "[a-zA-Z0-9]{32}"
+  - name: CONTROLLER_POSTGRESQL_HOST
+    displayName: Postgresql Host
+    description: The name of the Postgresql deployment
+    required: true
+    value: aries-endorser-db
+  - name: CONTROLLER_POSTGRESQL_PORT
+    displayName: Postgresql Port
+    description: The db port of the Postgres deployment
+    required: true
+    value: "5432"
+
+  - name: ACAPY_ADMIN_HOST
+    displayName: Aca-py host name
+    description: Host name for the aca-py agent
+    required: true
+    value: "aries-endorser-agent"
+  - name: ACAPY_ADMIN_URL
+    displayName: Aca-py Admin Url
+    description: The admin url of the endorser aca-py agent
+    required: true
+    value: "http://aries-endorser-agent:8051"
+  - name: ENDORSER_AUTO_ACCEPT_CONNECTIONS
+    displayName: Connection Auto-accept Flag
+    description: Flag to specify whether to globally auto-accept connection requests
+    required: true
+    value: "false"
+  - name: ENDORSER_AUTO_ACCEPT_AUTHORS
+    displayName: Connection Auto-configure Flag
+    description: Flag to specify whether to globally auto-configure author connections
+    required: true
+    value: "false"
+  - name: ENDORSER_AUTO_ENDORSE_REQUESTS
+    displayName: Connection Auto-accept Flag
+    description: Flag to specify whether to globally auto-endorse transactions
+    required: true
+    value: "false"
+  - name: ACAPY_WEBHOOK_URL_API_KEY
+    displayName: Aca-py Webhook API Key
+    description: The API key aca-py will include in webhook notifications
+    required: false
+    generate: expression
+    from: "[a-zA-Z0-9]{32}"
+  - name: LOG_LEVEL
+    displayName: Log Level
+    description: Log Level
+    required: true
+    value: INFO
+
+  - name: CPU_REQUEST
+    displayName: Resources CPU Request
+    description: The resources CPU request (in cores) for this build.
+    required: true
+    value: 10m
+  - name: CPU_LIMIT
+    displayName: Resources CPU Limit
+    description: The resources CPU limit (in cores) for this build.
+    required: true
+    value: 250m
+  - name: MEMORY_REQUEST
+    displayName: Resources Memory Request
+    description: The resources Memory request (in Mi, Gi, etc) for this build.
+    required: true
+    value: 10Mi
+  - name: MEMORY_LIMIT
+    displayName: Resources Memory Limit
+    description: The resources Memory limit (in Mi, Gi, etc) for this build.
+    required: true
+    value: 1Gi

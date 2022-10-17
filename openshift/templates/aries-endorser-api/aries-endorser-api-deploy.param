@@ -1,0 +1,32 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/aries-endorser-api/aries-endorser-api-deploy.yaml
+#=========================================================
+NAME=aries-endorser-api
+APP_GROUP=aries-endorser-service
+NAMESPACE_NAME=4a9599
+APP_NAME=aries-endorser-service
+SUFFIX=
+ROLE=controller
+AGENT_ROLE=agent
+PROXY_ROLE=proxy
+IMAGE_NAMESPACE=4a9599-tools
+TAG_NAME=dev
+WEB_CONCURRENCY=2
+ENDORSER_SERVICE_PORT=5000
+ENDORSER_API_ADMIN_USER=endorser-admin
+# ENDORSER_API_ADMIN_KEY=[a-zA-Z0-9]{32}
+CONTROLLER_POSTGRESQL_HOST=aries-endorser-db
+CONTROLLER_POSTGRESQL_PORT=5432
+ACAPY_ADMIN_HOST=aries-endorser-agent
+ACAPY_ADMIN_URL=http://aries-endorser-agent:8051
+ENDORSER_AUTO_ACCEPT_CONNECTIONS=false
+ENDORSER_AUTO_ACCEPT_AUTHORS=false
+ENDORSER_AUTO_ENDORSE_REQUESTS=false
+# ACAPY_WEBHOOK_URL_API_KEY=[a-zA-Z0-9]{32}
+LOG_LEVEL=INFO
+CPU_REQUEST=10m
+CPU_LIMIT=250m
+MEMORY_REQUEST=10Mi
+MEMORY_LIMIT=1Gi

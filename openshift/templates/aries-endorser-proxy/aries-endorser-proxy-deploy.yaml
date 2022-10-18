@@ -246,21 +246,39 @@ objects:
                   subPath: ${CADDY_CONFIG_FILE_NAME}
 
   - kind: HorizontalPodAutoscaler
-    apiVersion: autoscaling/v1
+    apiVersion: autoscaling/v2beta2
     metadata:
       name: ${NAME}${SUFFIX}
       labels:
         name: ${NAME}${SUFFIX}
         app: ${APP_NAME}${SUFFIX}
+        app.kubernetes.io/part-of: ${APP_NAME}${SUFFIX}
         app-group: ${APP_GROUP}
         role: ${ROLE}
         env: ${TAG_NAME}
     spec:
       scaleTargetRef:
+        apiVersion: apps.openshift.io/v2
         kind: DeploymentConfig
         name: ${NAME}${SUFFIX}
       minReplicas: ${{MIN_REPLICAS}}
       maxReplicas: ${{MAX_REPLICAS}}
+      metrics:
+        - type: Resource
+          resource:
+            name: memory
+            target:
+              type: Utilization
+              averageUtilization: 75
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 80
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300  
 
 parameters:
   - name: NAME
@@ -394,12 +412,12 @@ parameters:
     displayName: Minimum Replicas
     description: The minimum number of pods to have running.
     required: true
-    value: "2"
+    value: "3"
   - name: MAX_REPLICAS
     displayName: Maximum Replicas
     description: The maximum number of pods to have running.
     required: true
-    value: "16"
+    value: "6"
 
   - name: CPU_REQUEST
     displayName: Resources CPU Request

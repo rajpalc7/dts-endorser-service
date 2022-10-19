@@ -1,21 +1,23 @@
 #=========================================================
 # OpenShift template parameters for:
 # Component: .
-# Template File: ../openshift/templates/backup/backup-deploy.yaml
+# Template File: ../openshift/templates/aries-endorser-backup/aries-endorser-backup-deploy.yaml
 #=========================================================
 # NAME=aries-endorser-backup
+# ROLE=backup
 # SUFFIX=
 # APP_NAME=aries-endorser-service
 # APP_GROUP=aries-endorser-service
 # SOURCE_IMAGE_NAME=aries-endorser-backup
 # IMAGE_NAMESPACE=4a9599-tools
 TAG_NAME=prod
-# WALLET_DB_HOST=endorser-agent-db
+# ARIES_ENDORSER_DB_HOST=aries-endorser-db
+# ARIES_ENDORSER_WALLET_HOST=aries-endorser-wallet
 # DATABASE_USER_KEY_NAME=database-user
 # DATABASE_PASSWORD_KEY_NAME=database-password
 # BACKUP_STRATEGY=rolling
 # WEBHOOK_URL=
-ENVIRONMENT_FRIENDLY_NAME=Aries Endorser Service (prod)
+ENVIRONMENT_FRIENDLY_NAME=Digital Trust Shared Service (prod)
 ENVIRONMENT_NAME=4a9599-prod
 # BACKUP_DIR=/backups/
 # DAILY_BACKUPS=4

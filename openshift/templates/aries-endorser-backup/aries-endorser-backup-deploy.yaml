@@ -124,16 +124,29 @@ objects:
                   value: ${WEEKLY_BACKUPS}
                 - name: MONTHLY_BACKUPS
                   value: ${MONTHLY_BACKUPS}
+
                 - name: ARIES_ENDORSER_DB_USER
                   valueFrom:
                     secretKeyRef:
-                      name: ${WALLET_DB_HOST}${SUFFIX}
+                      name: ${ARIES_ENDORSER_DB_HOST}${SUFFIX}
                       key: ${DATABASE_USER_KEY_NAME}
                 - name: ARIES_ENDORSER_DB_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: ${WALLET_DB_HOST}${SUFFIX}
+                      name: ${ARIES_ENDORSER_DB_HOST}${SUFFIX}
                       key: ${DATABASE_PASSWORD_KEY_NAME}
+
+                - name: ARIES_ENDORSER_WALLET_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${ARIES_ENDORSER_WALLET_HOST}${SUFFIX}
+                      key: ${DATABASE_USER_KEY_NAME}
+                - name: ARIES_ENDORSER_WALLET_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${ARIES_ENDORSER_WALLET_HOST}${SUFFIX}
+                      key: ${DATABASE_PASSWORD_KEY_NAME}
+
                 - name: WEBHOOK_URL
                   valueFrom:
                     secretKeyRef:
@@ -201,11 +214,18 @@ parameters:
     description: The TAG name for this environment, e.g., dev, test, prod
     required: true
     value: dev
-  - name: WALLET_DB_HOST
-    displayName: Wallet Database Hostname
-    description: The name associated to the wallet database deployment resources.  In particular, this is used to wire up the credentials associated to the database.
+
+  - name: ARIES_ENDORSER_DB_HOST
+    displayName: Aries Endorser Database Hostname
+    description: The name associated to the aries endorser database resources.  In particular, this is used to wire up the credentials associated to the database.
     required: true
-    value: endorser-agent-db
+    value: aries-endorser-db
+  - name: ARIES_ENDORSER_WALLET_HOST
+    displayName: Aries Endorser Wallet Database Hostname
+    description: The name associated to the aries endorser wallet database resources.  In particular, this is used to wire up the credentials associated to the database.
+    required: true
+    value: aries-endorser-wallet
+
   - name: DATABASE_USER_KEY_NAME
     displayName: Database User Key Name
     description: The datbase user key name stoed in database deployment resources specified by DATABASE_DEPLOYMENT_NAME.
@@ -216,6 +236,7 @@ parameters:
     description: The database password key name stored in database deployment resources specified by DATABASE_DEPLOYMENT_NAME.
     required: true
     value: database-password
+
   - name: BACKUP_STRATEGY
     displayName: Backup Strategy
     description: The strategy to use for backups; for example daily, or rolling.
@@ -285,7 +306,7 @@ parameters:
     displayName: Backup Volume Size
     description: The size of the persistent volume used to store the backups, e.g. 512Mi, 1Gi, 2Gi.  Ensure this is sized correctly.  Refer to the container documentation for details.
     required: true
-    value:5Gi
+    value: 5Gi
   - name: BACKUP_VOLUME_CLASS
     displayName: Backup Volume Class
     description: The class of the persistent volume used to store the backups; netapp-file-backup.
@@ -311,6 +332,7 @@ parameters:
     description: The path on which to mount the verification volume.  This is used by the database server to contain the database configuration and data files.
     required: true
     value: /var/lib/pgsql/data
+
   - name: CPU_REQUEST
     displayName: Resources CPU Request
     description: The resources CPU request (in cores) for this build.

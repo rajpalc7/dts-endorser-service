@@ -105,7 +105,7 @@ objects:
                 claimName: ${VERIFICATION_VOLUME_NAME}
             - name: ${NAME}${SUFFIX}-config-volume
               configMap:
-                name: ${CONFIG_MAP_NAME}${SUFFIX}
+                name: ${NAME}-${CONFIG_MAP_NAME}${SUFFIX}
                 items:
                   - key: ${CONFIG_FILE_NAME}
                     path: ${CONFIG_FILE_NAME}

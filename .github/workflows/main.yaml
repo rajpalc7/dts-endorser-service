@@ -38,7 +38,7 @@ jobs:
             overwrite: true
 
     steps:
-      - uses: dts-endorser-service/openshift
+      - uses: redhat-developer/openshift-actions@v2.0
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ secrets.OC_NAMESPACE }}

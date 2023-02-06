@@ -1,4 +1,4 @@
-name: Deployment to Production
+name: Build & Test
 on:
   workflow_dispatch:
   push:

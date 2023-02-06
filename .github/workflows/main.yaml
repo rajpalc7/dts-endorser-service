@@ -4,15 +4,15 @@ on:
   push:
 
 jobs:
-  development:
+  build:
     # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: development
     steps:
       - name: Image Build
         env:
           NAMESPACE: 4a9599-tools
-          - name: Deploy to the development environment
+          BUILD_NAME: audit
+          IMAGE_NAME: audit
         uses: redhat-developer/openshift-actions@v2.0
         with:
           version: "latest"
@@ -20,14 +20,15 @@ jobs:
           parameters: '{"apitoken": "${{ secrets.OPENSHIFT_TOKEN}}", "acceptUntrustedCerts": "true"}'
           cmd: |
             'version'
- 
+            'start-build ${BUILD_NAME} -n ${NAMESPACE} --follow'
+
 
   deploys-test:
     name: TEST Deployments
     needs:
       - codeql
     environment: test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         name: [openshift]

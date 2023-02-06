@@ -39,9 +39,9 @@ jobs:
       - uses: redhat-developer/openshift-actions@v2.0
         with:
           file: ${{ matrix.file }}
-          oc_namespace: ${{ secrets.OC_NAMESPACE }}
-          oc_server: ${{ secrets.OPENSHIFT_SERVER }}
-          oc_token: ${{ secrets.OPENSHIFT_TOKEN }}
+          openshift_namespace: ${{ secrets.OC_NAMESPACE }}
+          openshift_server: ${{ secrets.OPENSHIFT_SERVER }}
+          openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
           overwrite: ${{ matrix.overwrite }}
           parameters:
             -p ZONE=test -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test

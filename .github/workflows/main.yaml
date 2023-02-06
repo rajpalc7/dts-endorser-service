@@ -1,18 +1,18 @@
-name: Build & Test
+name: Deployment to Production
 on:
   workflow_dispatch:
   push:
 
 jobs:
-  build:
+  development:
     # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: development
     steps:
       - name: Image Build
         env:
           NAMESPACE: 4a9599-tools
-          BUILD_NAME: audit
-          IMAGE_NAME: audit
+          - name: Deploy to the development environment
         uses: redhat-developer/openshift-actions@v2.0
         with:
           version: "latest"
@@ -20,6 +20,33 @@ jobs:
           parameters: '{"apitoken": "${{ secrets.OPENSHIFT_TOKEN}}", "acceptUntrustedCerts": "true"}'
           cmd: |
             'version'
-            'start-build ${BUILD_NAME} -n ${NAMESPACE} --follow'
+ 
+
+  deploys-test:
+    name: TEST Deployments
+    needs:
+      - codeql
+    environment: test
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        name: [openshift]
+        include:
+          - name: openshift
+            file: openshift/openshift.deploy.yml
+            overwrite: true
+
+    steps:
+      - uses: dts-endorser-service/openshift
+        with:
+          file: ${{ matrix.file }}
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_server: ${{ secrets.OPENSHIFT_SERVER }}
+          oc_token: ${{ secrets.OPENSHIFT_TOKEN }}
+          overwrite: ${{ matrix.overwrite }}
+          parameters:
+            -p ZONE=test -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test
+            -p NAME=${{ github.event.repository.name }} ${{ matrix.parameters }}
+          penetration_test: true
 
 

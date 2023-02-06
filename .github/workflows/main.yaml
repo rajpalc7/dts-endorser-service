@@ -11,7 +11,7 @@ jobs:
       - name: Image Build
         env:
           NAMESPACE: 4a9599-tools
-          BUILD_NAME: allure-ui-1
+          BUILD_NAME: allure-ui
           IMAGE_NAME: allure-ui
         uses: redhat-developer/openshift-actions@v2.0
         with:

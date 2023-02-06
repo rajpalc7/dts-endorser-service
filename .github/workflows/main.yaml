@@ -39,7 +39,7 @@ jobs:
       - uses: redhat-developer/openshift-actions@v2.0
         with:
           file: ${{ matrix.file }}
-          openshift_namespace_url: ${{ secrets.OC_NAMESPACE }}
+          openshift_namespace_url: ${{ secrets.OPENSHIFT_NAMESPACE }}
           openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
           openshift_token_url: ${{ secrets.OPENSHIFT_TOKEN }}
           overwrite: ${{ matrix.overwrite }}

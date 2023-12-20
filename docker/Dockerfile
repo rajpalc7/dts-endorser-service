@@ -15,7 +15,6 @@ ARG GOCROND_VERSION=22.9.1
 ADD https://github.com/$SOURCE_REPO/go-crond/releases/download/$GOCROND_VERSION/go-crond.linux.amd64 /usr/bin/go-crond
 
 COPY ./docker/run.sh .
-COPY ./docker/audit.conf .
 
 USER root
 # ========================================================================================================

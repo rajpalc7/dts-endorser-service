@@ -16,7 +16,6 @@ ADD https://github.com/$SOURCE_REPO/go-crond/releases/download/$GOCROND_VERSION/
 
 COPY ./docker/run.sh .
 COPY ./docker/audit.conf .
-COPY ./scripts ./scripts
 
 USER root
 # ========================================================================================================

@@ -42,7 +42,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/bcgov/dts-endorser-service/allure-ui
+        images: ghcr.io/bcgov/dts-endorser-service/aries-endorser
         flavor: |
           latest=true
         tags: |

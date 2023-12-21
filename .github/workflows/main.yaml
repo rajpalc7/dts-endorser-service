@@ -11,13 +11,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GITHUB_IMAGE_REPO: ghcr.io/bcgov/dts-endorser-service/
+  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
   OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
   APP_NAME: aries-endorser-service
 
 jobs:
   build:
-    if: (github.repository == 'bcgov/dts-endorser-service') || (github.event_name == 'workflow_dispatch')
+    if: (github.repository == 'rajpalc7/dts-endorser-service') || (github.event_name == 'workflow_dispatch')
     name: Build Image
     permissions:
       packages: write
@@ -42,7 +42,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/bcgov/dts-endorser-service/aries-endorser-service
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-service
         flavor: |
           latest=true
         tags: |

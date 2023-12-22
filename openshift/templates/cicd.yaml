@@ -41,6 +41,7 @@ objects:
         verbs:
           - get
           - list
+          - create
       - apiGroups:
           - image.openshift.io
           - ""

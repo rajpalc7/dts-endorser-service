@@ -42,7 +42,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-service
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-agent
         flavor: |
           latest=true
         tags: |

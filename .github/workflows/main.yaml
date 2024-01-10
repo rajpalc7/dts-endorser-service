@@ -13,7 +13,7 @@ concurrency:
 env:
   GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
   OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: jenkins
+  APP_NAME: aries-endorser-service
 
 jobs:
   build:
@@ -42,7 +42,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/jenkins
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-service
         flavor: |
           latest=true
         tags: |

@@ -37,7 +37,6 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        configFile: ${{ github.workspace }}/.docker/config.json
 
     - name: Prepare docker tags for image
       id: meta

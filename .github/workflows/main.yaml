@@ -13,7 +13,7 @@ concurrency:
 env:
   GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
   OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: aries-endorser-service
+  APP_NAME: aries-endorser-agent
 
 jobs:
   build:

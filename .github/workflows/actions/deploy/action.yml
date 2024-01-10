@@ -58,8 +58,12 @@ runs:
 
     - name: Login in to OpenShift container registry
       shell: bash
+      env: 
+        REGISTRY_AUTH_PREFERENCE: docker
       run: |
-        oc registry login
+        oc version
+        docker version
+        oc registry login --to="${HOME}/.docker/config.json"
 
     - name: Tag the image in the GHCR as ${{ inputs.environment }}
       shell: bash

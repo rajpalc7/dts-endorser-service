@@ -13,27 +13,7 @@ concurrency:
 env:
   GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
   OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: aries-endorser-agent
-
-env:
-  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
-  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: aries-endorser-db
-
-env:
-  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
-  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: aries-endorser-backup
-
-env:
-  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
-  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: aries-endorser-proxy
-
-env:
-  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
-  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: aries-endorser-api
+  APP_NAME: aries-endorser-agent, aries-endorser-db, aries-endorser-backup, aries-endorser-proxy, aries-endorser-api 
 
 jobs:
   build:

@@ -15,6 +15,26 @@ env:
   OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
   APP_NAME: aries-endorser-agent
 
+env:
+  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
+  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
+  APP_NAME: aries-endorser-db
+
+env:
+  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
+  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
+  APP_NAME: aries-endorser-backup
+
+env:
+  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
+  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
+  APP_NAME: aries-endorser-proxy
+
+env:
+  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
+  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
+  APP_NAME: aries-endorser-api
+
 jobs:
   build:
     if: (github.repository == 'rajpalc7/dts-endorser-service') || (github.event_name == 'workflow_dispatch')
@@ -43,6 +63,71 @@ jobs:
       uses: docker/metadata-action@v4
       with:
         images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-agent
+        flavor: |
+          latest=true
+        tags: |
+          type=schedule
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,value=latest
+
+    - name: Prepare docker tags for image
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-db
+        flavor: |
+          latest=true
+        tags: |
+          type=schedule
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,value=latest
+
+    - name: Prepare docker tags for image
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-backup
+        flavor: |
+          latest=true
+        tags: |
+          type=schedule
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,value=latest
+                
+    - name: Prepare docker tags for image
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-proxy
+        flavor: |
+          latest=true
+        tags: |
+          type=schedule
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,value=latest
+
+
+    - name: Prepare docker tags for image
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-api
         flavor: |
           latest=true
         tags: |

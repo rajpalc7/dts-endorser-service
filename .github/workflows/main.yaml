@@ -13,7 +13,7 @@ concurrency:
 env:
   GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
   OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
-  APP_NAME: aries-endorser-agent, aries-endorser-db, aries-endorser-backup, aries-endorser-proxy, aries-endorser-api 
+  APP_NAMES: aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api 
 
 jobs:
   build:
@@ -22,6 +22,9 @@ jobs:
     permissions:
       packages: write
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: ${{ split(env.APP_NAMES, ',') }}
     outputs:
       image_digest: ${{steps.docker_build.outputs.digest}}
     steps:
@@ -42,72 +45,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-agent
-        flavor: |
-          latest=true
-        tags: |
-          type=schedule
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,value=latest
-
-    - name: Prepare docker tags for image
-      id: meta1
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-db
-        flavor: |
-          latest=true
-        tags: |
-          type=schedule
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,value=latest
-
-    - name: Prepare docker tags for image
-      id: meta2
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-backup
-        flavor: |
-          latest=true
-        tags: |
-          type=schedule
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,value=latest
-                
-    - name: Prepare docker tags for image
-      id: meta3
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-proxy
-        flavor: |
-          latest=true
-        tags: |
-          type=schedule
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,value=latest
-
-
-    - name: Prepare docker tags for image
-      id: meta4
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-api
+        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-${{ matrix.app }}
         flavor: |
           latest=true
         tags: |
@@ -154,13 +92,14 @@ jobs:
         with:
           environment: ${{ env.ENVIRONMENT }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
-          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ env.APP_NAME }}
+          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ matrix.app }}
           image_digest: ${{ needs.build.outputs.image_digest }}
-          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}${{ env.APP_NAME }}
+          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}${{ matrix.app }}
           openshift_server_url: ${{ vars.OPENSHIFT_SERVER_URL }}
           namespace: ${{ vars.NAMESPACE }}
-          deployment_configuration: ${{ env.APP_NAME }}
+          deployment_configuration: ${{ matrix.app }}
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+
           
           # rocketchat_webhook: ${{ secrets.ROCKETCHAT_WEBHOOK }}
 
@@ -217,3 +156,5 @@ jobs:
   #         deployment_configuration: ${{ env.APP_NAME }}
   #         openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
   #         rocketchat_webhook: ${{ secrets.ROCKETCHAT_WEBHOOK }}
+
+  # aries-endorser-db, aries-endorser-backup, aries-endorser-proxy, aries-endorser-api 

@@ -92,12 +92,12 @@ jobs:
         with:
           environment: ${{ env.ENVIRONMENT }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
-          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ matrix.app }}
+          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ matrix.inputs }}
           image_digest: ${{ needs.build.outputs.image_digest }}
-          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}${{ matrix.app }}
+          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}${{ matrix.inputs }}
           openshift_server_url: ${{ vars.OPENSHIFT_SERVER_URL }}
           namespace: ${{ vars.NAMESPACE }}
-          deployment_configuration: ${{ matrix.app }}
+          deployment_configuration: ${{ matrix.inputs }}
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
 
 

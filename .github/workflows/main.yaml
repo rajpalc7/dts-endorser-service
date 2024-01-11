@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: ${{ fromJson(env.APP_NAMES) }}
+        package: [aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api ]
     outputs:
       image_digest: ${{steps.docker_build.outputs.digest}}
     steps:

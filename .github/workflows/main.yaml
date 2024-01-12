@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/
-  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools/
+  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service
+  OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools
   APP_NAMES: aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api 
 
 jobs:

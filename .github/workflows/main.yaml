@@ -92,14 +92,21 @@ jobs:
         with:
           environment: ${{ env.ENVIRONMENT }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
-          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}/${{ matrix.service }}
+          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ env.matrix_service }}
           image_digest: ${{ needs.build.outputs.image_digest }}
-          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}/${{ matrix.service }}
+          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}${{ env.matrix_service }}
           openshift_server_url: ${{ vars.OPENSHIFT_SERVER_URL }}
           namespace: ${{ vars.NAMESPACE }}
-          deployment_configuration: ${{ matrix.service }}
+          deployment_configuration: ${{ env.matrix_service }}
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-          
+
+          # docker pull ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-api:sha-e237467
+          # docker pull ${{ inputs.github_image_name }}@${{ inputs.image_digest }}
+          # github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ matrix.service }}
+          # GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service
+          # docker pull ghcr.io/rajpalc7/dts-endorser-service
+          # github_image_name: ghcr.io/rajpalc7/dts-endorser-service
+          # docker push ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-api
           # rocketchat_webhook: ${{ secrets.ROCKETCHAT_WEBHOOK }}
 
   # deploy2test:

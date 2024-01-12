@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
+  GITHUB_IMAGE_REPO: ghcr.io/rajpalc7/dts-endorser-service
   OPENSHIFT_IMAGE_REPO: image-registry.apps.silver.devops.gov.bc.ca/4a9599-tools
   APP_NAMES: aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api 
 
@@ -92,7 +92,7 @@ jobs:
         with:
           environment: ${{ env.ENVIRONMENT }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
-          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ matrix.service }}
+          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}/${{ matrix.service }}
           image_digest: ${{ needs.build.outputs.image_digest }}
           openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}/${{ matrix.service }}
           openshift_server_url: ${{ vars.OPENSHIFT_SERVER_URL }}

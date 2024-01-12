@@ -45,7 +45,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}:dev
+        images: ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
         flavor: |
           latest=true
         tags: |

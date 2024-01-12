@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        inputs: [aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api]
+        service: [aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api]
     outputs:
       image_digest: ${{steps.docker_build.outputs.digest}}
     steps:
@@ -45,7 +45,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-${{ matrix.inputs }}
+        images: ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
         flavor: |
           latest=true
         tags: |

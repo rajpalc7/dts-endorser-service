@@ -92,13 +92,15 @@ jobs:
         with:
           environment: ${{ env.ENVIRONMENT }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
-          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}${{ env.matrix_service }}
+          github_image_name: ${{ env.GITHUB_IMAGE_REPO }}/${{ env.matrix_service }}
           image_digest: ${{ needs.build.outputs.image_digest }}
-          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}${{ env.matrix_service }}
+          openshift_image_name: ${{ env.OPENSHIFT_IMAGE_REPO }}/${{ env.matrix_service }}
           openshift_server_url: ${{ vars.OPENSHIFT_SERVER_URL }}
           namespace: ${{ vars.NAMESPACE }}
           deployment_configuration: ${{ env.matrix_service }}
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+
+          # docker pull ghcr.io/rajpalc7/dts-endorser-service@sha256:57f946ab1053726ac6fcb71c85a98d355e926904ebe26db4798353668b3f6c68
 
           # docker pull ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-api:sha-e237467
           # docker pull ${{ inputs.github_image_name }}@${{ inputs.image_digest }}

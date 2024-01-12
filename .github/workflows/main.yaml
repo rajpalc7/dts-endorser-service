@@ -81,6 +81,9 @@ jobs:
     permissions:
       packages: write
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api]
     environment: dev
   
     steps:

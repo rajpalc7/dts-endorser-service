@@ -24,12 +24,35 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api]
+        include:
+          - service: aries-endorser-agent
+            GIT_REPO_URL: https://github.com/bcgov/aries-endorser-service.git
+            DOCKER_FILE_PATH: Dockerfile.acapy
+            SOURCE_CONTEXT_DIR: docker/acapy
+          # - service: aries-endorser-db
+          #   GIT_REPO_URL: https://github.com/bcgov/aries-endorser-service
+          #   DOCKER_FILE_PATH: docker/wallet/config
+          #   SOURCE_CONTEXT_DIR: docker/wallet/config
+          - service: aries-endorser-backup
+            GIT_REPO_URL: https://github.com/BCDevOps/backup-container.git
+            DOCKER_FILE_PATH: Dockerfile
+            SOURCE_CONTEXT_DIR: /docker
+          # - service: aries-endorser-proxy
+          #   GIT_REPO_URL: https://github.com/BCDevOps/backup-container.git
+          #   DOCKER_FILE_PATH: Dockerfile
+          #   SOURCE_CONTEXT_DIR: /docker
+          - service: aries-endorser-api
+            GIT_REPO_URL: https://github.com/bcgov/aries-endorser-service.git
+            DOCKER_FILE_PATH: Dockerfile.endorser
+            SOURCE_CONTEXT_DIR: endorser
     outputs:
       image_digest: ${{steps.docker_build.outputs.digest}}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+      with: 
+        repository: ${{ matrix.GIT_REPO_URL }}
+
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -61,8 +84,8 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v3
       with:
-        context: .
-        file: docker/Dockerfile
+        context: ${{ matrix.service }}/${{ matrix.SOURCE_CONTEXT_DIR }}
+        file: ${{ matrix.DOCKER_FILE_PATH }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -81,9 +104,6 @@ jobs:
     permissions:
       packages: write
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [aries-endorser-agent,aries-endorser-db,aries-endorser-backup,aries-endorser-proxy,aries-endorser-api]
     environment: dev
   
     steps:

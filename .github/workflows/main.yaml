@@ -28,7 +28,7 @@ jobs:
           - service: aries-endorser-agent
             GIT_REPO_URL: bcgov/aries-endorser-service
             DOCKER_FILE_PATH: Dockerfile.acapy
-            SOURCE_CONTEXT_DIR: docker/acapy
+            SOURCE_CONTEXT_DIR: tree/main/docker/acapy
           # - service: aries-endorser-db
           #   GIT_REPO_URL: bcgov/aries-endorser-service
           #   DOCKER_FILE_PATH: docker/wallet/config

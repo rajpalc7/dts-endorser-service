@@ -26,23 +26,23 @@ jobs:
       matrix:
         include:
           - service: aries-endorser-agent
-            GIT_REPO_URL: https://github.com/bcgov/aries-endorser-service
+            GIT_REPO_URL: bcgov/aries-endorser-service
             DOCKER_FILE_PATH: Dockerfile.acapy
             SOURCE_CONTEXT_DIR: docker/acapy
           # - service: aries-endorser-db
-          #   GIT_REPO_URL: https://github.com/bcgov/aries-endorser-service
+          #   GIT_REPO_URL: bcgov/aries-endorser-service
           #   DOCKER_FILE_PATH: docker/wallet/config
           #   SOURCE_CONTEXT_DIR: docker/wallet/config
           - service: aries-endorser-backup
-            GIT_REPO_URL: https://github.com/BCDevOps/backup-container
+            GIT_REPO_URL: BCDevOps/backup-container
             DOCKER_FILE_PATH: Dockerfile
             SOURCE_CONTEXT_DIR: /docker
           # - service: aries-endorser-proxy
-          #   GIT_REPO_URL: https://github.com/BCDevOps/backup-container.git
+          #   GIT_REPO_URL: BCDevOps/backup-container.git
           #   DOCKER_FILE_PATH: Dockerfile
           #   SOURCE_CONTEXT_DIR: /docker
           - service: aries-endorser-api
-            GIT_REPO_URL: https://github.com/bcgov/aries-endorser-service
+            GIT_REPO_URL: bcgov/aries-endorser-service
             DOCKER_FILE_PATH: Dockerfile.endorser
             SOURCE_CONTEXT_DIR: endorser
     outputs:

@@ -38,7 +38,7 @@ jobs:
             DOCKER_FILE_PATH: Dockerfile
             SOURCE_CONTEXT_DIR: /docker
           # - service: aries-endorser-proxy
-          #   GIT_REPO_URL: BCDevOps/backup-container.git
+          #   GIT_REPO_URL: BCDevOps/backup-container
           #   DOCKER_FILE_PATH: Dockerfile
           #   SOURCE_CONTEXT_DIR: /docker
           - service: aries-endorser-api
@@ -83,7 +83,7 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v3
       with:
-        context: ${{ matrix.service }}/${{ matrix.SOURCE_CONTEXT_DIR }}
+        context: ${{ matrix.SOURCE_CONTEXT_DIR }}
         file: ${{ matrix.DOCKER_FILE_PATH }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}

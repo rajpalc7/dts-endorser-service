@@ -26,7 +26,7 @@ jobs:
       matrix:
         include:
           - service: aries-endorser-agent
-            GIT_REPO_URL: bcgov/hyperledger/aries-endorser-service
+            GIT_REPO_URL: bcgov/aries-endorser-service.git
             SOURCE_CONTEXT_DIR: docker/acapy
             DOCKER_FILE_PATH: Dockerfile.acapy
           # - service: aries-endorser-db

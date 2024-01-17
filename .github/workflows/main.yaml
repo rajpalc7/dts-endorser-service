@@ -87,7 +87,7 @@ jobs:
       id: docker_build
       uses: docker/build-push-action@v3
       with:
-        context:   .
+        context: ${{ matrix.SOURCE_CONTEXT_DIR }}
         file:  ${{ matrix.SOURCE_CONTEXT_DIR }}/${{ matrix.DOCKER_FILE_PATH }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}

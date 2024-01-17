@@ -36,7 +36,7 @@ jobs:
           - service: aries-endorser-backup
             GIT_REPO_URL: BCDevOps/backup-container
             DOCKER_FILE_PATH: Dockerfile
-            SOURCE_CONTEXT_DIR: /docker
+            SOURCE_CONTEXT_DIR: docker
           # - service: aries-endorser-proxy
           #   GIT_REPO_URL: BCDevOps/backup-container
           #   DOCKER_FILE_PATH: Dockerfile

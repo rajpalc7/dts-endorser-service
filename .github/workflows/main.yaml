@@ -95,14 +95,22 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Setup and Build
-      id: build_image
+    # - name: Setup and Build
+    #   id: build_image
+    #   uses: redhat-actions/s2i-build@v2
+    #   with:
+    #     path_context: docker/wallet/config
+    #     # Builder image for a java project
+    #     builder_image: 'registry.redhat.io/rhel9/postgresql-13'
+    #     image: ${{ env.github_image_name }}
+    #     tags: ${{ steps.meta.outputs.tags }}
+
+    - name: Aries Endorser DB S2I Build
       uses: redhat-actions/s2i-build@v2
       with:
         path_context: docker/wallet/config
-        # Builder image for a java project
         builder_image: 'registry.redhat.io/rhel9/postgresql-13'
-        image: ${{ env.github_image_name }}
+        image: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-db
         tags: ${{ steps.meta.outputs.tags }}
 
     - name: Display image results

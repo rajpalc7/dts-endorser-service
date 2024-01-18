@@ -29,10 +29,10 @@ jobs:
             GIT_REPO_URL: bcgov/aries-endorser-service
             SOURCE_CONTEXT_DIR: docker/acapy
             DOCKER_FILE_PATH: Dockerfile.acapy
-          - service: aries-endorser-db
-            GIT_REPO_URL: bcgov/aries-endorser-service
-            DOCKER_FILE_PATH: ./docker/wallet/config/registry.redhat.io/rhel9/postgresql-13
-            SOURCE_CONTEXT_DIR: ./docker/wallet/config  
+          # - service: aries-endorser-db
+          #   GIT_REPO_URL: bcgov/aries-endorser-service
+          #   DOCKER_FILE_PATH: ./docker/wallet/config/registry.redhat.io/rhel9/postgresql-13
+          #   SOURCE_CONTEXT_DIR: ./docker/wallet/config  
           - service: aries-endorser-backup
             GIT_REPO_URL: BCDevOps/backup-container
             DOCKER_FILE_PATH: Dockerfile
@@ -102,8 +102,8 @@ jobs:
         path_context: docker/wallet/config
         # Builder image for a java project
         builder_image: 'registry.redhat.io/rhel9/postgresql-13'
-        image: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-db
-        tags: latest
+        image: ${{ env.github_image_name }}
+        tags: ${{ steps.meta.outputs.tags }}
 
     - name: Display image results
       run: |

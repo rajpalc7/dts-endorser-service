@@ -30,6 +30,7 @@ jobs:
             SOURCE_CONTEXT_DIR: docker/acapy
             DOCKER_FILE_PATH: Dockerfile.acapy
           - service: aries-endorser-db
+            GIT_REPO_URL: https://github.com/bcgov/aries-endorser-service
             PATH:  docker/wallet/config
             BUILDER_IMAGE: 'registry.redhat.io/rhel9/postgresql-13'
           - service: aries-endorser-backup
@@ -55,7 +56,9 @@ jobs:
     - name: List Directories
       run: |
         ls -l
-
+        echo $service
+      env: 
+        service: ${{ matrix.service }}
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 

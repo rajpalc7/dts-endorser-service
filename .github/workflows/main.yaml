@@ -99,7 +99,7 @@ jobs:
       id: build_image
       uses: redhat-actions/s2i-build@v2
       with:
-        path_context: ./docker/wallet/config
+        path_context: docker/wallet/config
         # Builder image for a java project
         builder_image: 'registry.redhat.io/rhel9/postgresql-13'
         image: ${{ env.github_image_name }}

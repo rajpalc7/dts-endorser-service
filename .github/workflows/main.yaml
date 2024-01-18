@@ -30,12 +30,8 @@ jobs:
             SOURCE_CONTEXT_DIR: docker/acapy
             DOCKER_FILE_PATH: Dockerfile.acapy
           - service: aries-endorser-db
-            uses: redhat-actions/s2i-build@v2
-            with:
-              path_context: docker/wallet/config
-              builder_image: 'registry.redhat.io/rhel9/postgresql-13'
-              image: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-db:latest
-              tags: latest
+            PATH:  docker/wallet/config
+            BUILDER_IMAGE: 'registry.redhat.io/rhel9/postgresql-13'
           - service: aries-endorser-backup
             GIT_REPO_URL: BCDevOps/backup-container
             DOCKER_FILE_PATH: Dockerfile
@@ -97,29 +93,40 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+      if: contains([' aries-endorser-agent','aries-endorser-backup','aries-endorser-api'], ${{ matrix.service }} )
 
-    # - name: Setup and Build
-    #   id: build_image
-    #   uses: redhat-actions/s2i-build@v2
-    #   with:
-    #     path_context: docker/wallet/config
-    #     # Builder image for a java project
-    #     builder_image: 'registry.redhat.io/rhel9/postgresql-13'
-    #     image: ${{ env.github_image_name }}
-    #     tags: ${{ steps.meta.outputs.tags }}
+    - name: Setup and Build
+      id: build_image
+      uses: redhat-actions/s2i-build@v2
+      with:
+        path_context: ${{ matrix.PATH }}
+        # Builder image for a java project
+        builder_image: ${{ matrix.BUILDER_IMAGE }}
+        image:  ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
+        tags: ${{ steps.meta.outputs.tags }}
+      if: contains(['aries-endorser-db'], ${{ matrix.service }} )
 
-    # - name: Aries Endorser DB S2I Build
-    #   uses: redhat-actions/s2i-build@v2
-    #   with:
-    #     path_context: docker/wallet/config
-    #     builder_image: 'registry.redhat.io/rhel9/postgresql-13'
-    #     image: ghcr.io/rajpalc7/dts-endorser-service/aries-endorser-db
-    #     tags: ${{ steps.meta.outputs.tags }}
+    - name: Push image
+      id: push
+      uses: redhat-actions/push-to-registry@v2
+      with:
+          tags:  "${{ steps.build-image.outputs.image }}:${{ steps.build-image.outputs.tags }}"
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      if: contains(['aries-endorser-db'], ${{ matrix.service }} )
 
+    - name: Print image url
+      run:  |
+        echo "registry_path=${{ steps.push.outputs.registry-paths }}"
+        echo "digest=${{ steps.push.outputs.digest }}"
+      if: contains(['aries-endorser-db'], ${{ matrix.service }} )
+        
     - name: Display image results
       run: |
         echo 'imageid=${{ steps.docker_build.outputs.imageid }}'
         echo 'digest=${{ steps.docker_build.outputs.digest }}'
+      if: contains([' aries-endorser-agent','aries-endorser-backup','aries-endorser-api'], ${{ matrix.service }} )
+
 
   deploy2dev:
     needs: build

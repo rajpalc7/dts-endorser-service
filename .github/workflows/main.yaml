@@ -84,8 +84,9 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=sha,value=latest
-      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), 'aries-endorser-db')
-
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), '$service')
+      env: 
+        service: ${{ matrix.service }}
     # - name: Build and push Docker image
     #   id: docker_build
     #   uses: docker/build-push-action@v3

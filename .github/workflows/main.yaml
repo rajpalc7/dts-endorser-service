@@ -84,7 +84,7 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=sha,value=latest
-      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), ${{ matrix.service }} )
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), 'aries-endorser-db')
 
     # - name: Build and push Docker image
     #   id: docker_build
@@ -99,6 +99,12 @@ jobs:
     #     cache-to: type=gha,mode=max
     #   if: contains(fromJSON(['aries-endorser-agent','aries-endorser-backup','aries-endorser-api']), ${{ matrix.service }} )
 
+    - name: Pull base image
+      id: pull_build_image
+      run: |
+          docker pull $builder_image
+      env:
+        builder_image: ${{ matrix.BUILDER_IMAGE }}
     - name: Setup and Build
       id: build_image
       uses: redhat-actions/s2i-build@v2

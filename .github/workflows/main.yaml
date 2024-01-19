@@ -40,7 +40,7 @@ jobs:
           # - service: aries-endorser-proxy
           #   GIT_REPO_URL: BCDevOps/backup-container
           #   DOCKER_FILE_PATH: Dockerfile
-          #   SOURCE_CONTEXT_DIR: /docker
+          #   SOURCE_CONTEXT_DIR: /dsocker
           - service: aries-endorser-api
             GIT_REPO_URL: bcgov/aries-endorser-service
             DOCKER_FILE_PATH: Dockerfile.endorser
@@ -115,7 +115,7 @@ jobs:
         path_context: ${{ matrix.PATH }}
         # Builder image for a java project
         builder_image: ${{ matrix.BUILDER_IMAGE }}
-        image:  ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
+        image:  dts-endorser-service/${{ matrix.service }}
         tags: ${{ env.TAGS }}
       if: contains(fromJSON('["aries-endorser-db"]'), matrix.service)
 
@@ -127,6 +127,7 @@ jobs:
           image:  ${{ steps.build_image.outputs.image }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io/rajpalc7
       if: contains(fromJSON('["aries-endorser-db"]'), matrix.service)
 
     - name: Print image url

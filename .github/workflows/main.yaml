@@ -106,8 +106,8 @@ jobs:
           docker pull ${builder_image}
       env:
         builder_image: ${{ matrix.BUILDER_IMAGE }}
-      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
-      
+      if: contains(fromJSON('["aries-endorser-db"]'), matrix.service)
+
     - name: Setup and Build
       id: build_image
       uses: redhat-actions/s2i-build@v2
@@ -117,7 +117,7 @@ jobs:
         builder_image: ${{ matrix.BUILDER_IMAGE }}
         image:  ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
         tags: ${{ env.TAGS }}
-      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
+      if: contains(fromJSON('["aries-endorser-db"]'), matrix.service)
 
     - name: Push image
       id: push
@@ -127,13 +127,13 @@ jobs:
           image:  ${{ steps.build_image.outputs.image }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
+      if: contains(fromJSON('["aries-endorser-db"]'), matrix.service)
 
     - name: Print image url
       run:  |
         echo "registry_path=${{ steps.push.outputs.registry-paths }}"
         echo "digest=${{ steps.push.outputs.digest }}"
-      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
+      if: contains(fromJSON('["aries-endorser-db"]'), matrix.service)
         
     - name: Display image results
       run: |

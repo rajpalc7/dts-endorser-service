@@ -84,6 +84,7 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=sha,value=latest
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), ${{ matrix.service }} )
 
     # - name: Build and push Docker image
     #   id: docker_build
@@ -107,7 +108,7 @@ jobs:
         builder_image: ${{ matrix.BUILDER_IMAGE }}
         image:  ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
         tags: ${{ env.TAGS }}
-      if: contains(fromJson(['aries-endorser-db']), ${{ matrix.service }} )
+#      if: contains(["aries-endorser-db"], 'aries-endorser-agent')
 
     - name: Push image
       id: push

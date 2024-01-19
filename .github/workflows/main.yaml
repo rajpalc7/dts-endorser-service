@@ -106,7 +106,8 @@ jobs:
           docker pull ${builder_image}
       env:
         builder_image: ${{ matrix.BUILDER_IMAGE }}
-        if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
+      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
+      
     - name: Setup and Build
       id: build_image
       uses: redhat-actions/s2i-build@v2

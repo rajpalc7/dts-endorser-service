@@ -62,12 +62,12 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    # - name: Log in to the GHCR
-    #   uses: docker/login-action@v2
-    #   with:
-    #     registry: ghcr.io
-    #     username: ${{ github.actor }}
-    #     password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Log in to the GHCR
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Prepare docker tags for image
       id: meta
@@ -87,18 +87,18 @@ jobs:
       if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
       env: 
         service: ${{ matrix.service }}
-    # - name: Build and push Docker image
-    #   id: docker_build
-    #   uses: docker/build-push-action@v3
-    #   with:
-    #     context: ${{ matrix.SOURCE_CONTEXT_DIR }}
-    #     file:  ${{ matrix.SOURCE_CONTEXT_DIR }}/${{ matrix.DOCKER_FILE_PATH }}
-    #     push: true
-    #     tags: ${{ steps.meta.outputs.tags }}
-    #     labels: ${{ steps.meta.outputs.labels }}
-    #     cache-from: type=gha
-    #     cache-to: type=gha,mode=max
-    #   if: contains(fromJSON(['aries-endorser-agent','aries-endorser-backup','aries-endorser-api']), ${{ matrix.service }} )
+    - name: Build and push Docker image
+      id: docker_build
+      uses: docker/build-push-action@v3
+      with:
+        context: ${{ matrix.SOURCE_CONTEXT_DIR }}
+        file:  ${{ matrix.SOURCE_CONTEXT_DIR }}/${{ matrix.DOCKER_FILE_PATH }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
 
     - name: Pull base image
       id: pull_build_image
@@ -106,6 +106,7 @@ jobs:
           docker pull ${builder_image}
       env:
         builder_image: ${{ matrix.BUILDER_IMAGE }}
+        if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
     - name: Setup and Build
       id: build_image
       uses: redhat-actions/s2i-build@v2
@@ -115,7 +116,7 @@ jobs:
         builder_image: ${{ matrix.BUILDER_IMAGE }}
         image:  ghcr.io/rajpalc7/dts-endorser-service/${{ matrix.service }}
         tags: ${{ env.TAGS }}
-#      if: contains(["aries-endorser-db"], 'aries-endorser-agent')
+      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
 
     - name: Push image
       id: push
@@ -125,19 +126,19 @@ jobs:
           image:  ${{ steps.build_image.outputs.image }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      if: contains(fromJSON(['aries-endorser-db']), ${{ matrix.service }} )
+      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
 
     - name: Print image url
       run:  |
         echo "registry_path=${{ steps.push.outputs.registry-paths }}"
         echo "digest=${{ steps.push.outputs.digest }}"
-      if: contains(fromJson(['aries-endorser-db']), ${{ matrix.service }} )
+      if: contains(fromJSON('["aries-endorser-agent"]'), matrix.service)
         
     - name: Display image results
       run: |
         echo 'imageid=${{ steps.docker_build.outputs.imageid }}'
         echo 'digest=${{ steps.docker_build.outputs.digest }}'
-      if: contains(fromJSON([' aries-endorser-agent','aries-endorser-backup','aries-endorser-api']), ${{ matrix.service }} )
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
 
 
   deploy2dev:

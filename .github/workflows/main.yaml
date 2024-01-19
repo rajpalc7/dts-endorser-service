@@ -37,10 +37,9 @@ jobs:
             GIT_REPO_URL: BCDevOps/backup-container
             DOCKER_FILE_PATH: Dockerfile
             SOURCE_CONTEXT_DIR: docker
-          # - service: aries-endorser-proxy
-          #   GIT_REPO_URL: BCDevOps/backup-container
-          #   DOCKER_FILE_PATH: Dockerfile
-          #   SOURCE_CONTEXT_DIR: /dsocker
+          - service: aries-endorser-proxy
+            DOCKER_FILE_PATH: Dockerfile
+            SOURCE_CONTEXT_DIR: proxy
           - service: aries-endorser-api
             GIT_REPO_URL: bcgov/aries-endorser-service
             DOCKER_FILE_PATH: Dockerfile.endorser
@@ -87,6 +86,17 @@ jobs:
       if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
       env: 
         service: ${{ matrix.service }}
+     
+    - name: Create Docker file
+      run: |
+          mkdir ${context} && cd ${context} 
+          echo "FROM ${BASE_IMAGE}" > Dockerfile
+          echo "RUN chown 1001:root /usr/bin/caddy" >> Dockerfile
+      if: contains(fromJSON('["aries-endorser-proxy"]'), matrix.service)
+      env:
+        context: ${{ matrix.SOURCE_CONTEXT_DIR }}
+        BASE_IMAGE: "artifacts.developer.gov.bc.ca/docker-remote/caddy:latest"
+
     - name: Build and push Docker image
       id: docker_build
       uses: docker/build-push-action@v3
@@ -98,7 +108,7 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api","aries-endorser-proxy"]'), matrix.service)
 
     - name: Pull base image
       id: pull_build_image
@@ -140,7 +150,7 @@ jobs:
       run: |
         echo 'imageid=${{ steps.docker_build.outputs.imageid }}'
         echo 'digest=${{ steps.docker_build.outputs.digest }}'
-      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api","aries-endorser-proxy"]'), matrix.service)
 
 
   deploy2dev:

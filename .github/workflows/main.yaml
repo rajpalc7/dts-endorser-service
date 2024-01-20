@@ -83,7 +83,7 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=sha,value=latest
-      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api"]'), matrix.service)
+      if: contains(fromJSON('["aries-endorser-agent","aries-endorser-backup","aries-endorser-api","aries-endorser-proxy"]'), matrix.service)
       env: 
         service: ${{ matrix.service }}
      

@@ -51,34 +51,34 @@ jobs:
             REGISTRY_USERNAME_SECRET_NAME: ${{ inputs.service.endoser-db.username_secret_name || '' }} 
             REGISTRY_PASSWORD_SECRET_NAME: ${{ inputs.service.endoser-db.password_secret_name || '' }}
           - service: aries-endorser-backup
-            GIT_REPO_URL: BCDevOps/backup-container
-            GIT_REF: 2.5.1
-            DOCKER_FILE_PATH: Dockerfile  # The docker path, file, is the relative path to the docker file from the root of the repo.
-            SOURCE_CONTEXT_DIR: docker    # The context dir, context, sets the context for the build. i.e. where the build will source files from
-            SOURCE_IMAGE_REGISTRY: artifacts.developer.gov.bc.ca/docker-remote/
-            SOURCE_IMAGE_NAME: centos/postgresql-13-centos7
-            SOURCE_IMAGE_TAG: 20210722-70dc4d3
-            REGISTRY_USERNAME_SECRET_NAME: ${{ inputs.service.endoser-backup.username_secret_name || '' }} 
-            REGISTRY_PASSWORD_SECRET_NAME: ${{ inputs.service.endoser-backup.password_secret_name || '' }}
+            GIT_REPO_URL: ${{ inputs.service.endoser-backup.git_repo_url || 'BCDevOps/backup-container' }}
+            GIT_REF: ${{ inputs.service.endoser-backup.git_ref || '2.5.1' }}
+            DOCKER_FILE_PATH: ${{ inputs.service.endoser-backup.docker_file_path || 'Dockerfile' }}  # The docker path, file, is the relative path to the docker file from the root of the repo.
+            SOURCE_CONTEXT_DIR: ${{ inputs.service.endoser-backup.source_context_dir|| 'docker' }}  # The context dir, context, sets the context for the build. i.e. where the build will source files from
+            SOURCE_IMAGE_REGISTRY: ${{ inputs.service.endoser-backup.source_image_registry || 'artifacts.developer.gov.bc.ca/docker-remote/' }}
+            SOURCE_IMAGE_NAME: ${{ inputs.service.endoser-backup.source_image_name || 'centos/postgresql-13-centos7' }}
+            SOURCE_IMAGE_TAG: ${{ inputs.service.endoser-backup.source_image_tag || '20210722-70dc4d3' }}
+            REGISTRY_USERNAME_SECRET_NAME: ${{ inputs.service.endoser-backup.username_secret_name || 'ARTIFACTORY_USERNAME' }} 
+            REGISTRY_PASSWORD_SECRET_NAME: ${{ inputs.service.endoser-backup.password_secret_name || 'ARTIFACTORY_PASSWORD' }}
           - service: aries-endorser-proxy
-            GIT_REF: ""
-            DOCKER_FILE_PATH: Dockerfile  # The docker path, file, is the relative path to the docker file from the root of the repo.
-            SOURCE_CONTEXT_DIR: proxy     # The context dir, context, sets the context for the build. i.e. where the build will source files from
-            SOURCE_IMAGE_REGISTRY: "artifacts.developer.gov.bc.ca/docker-remote/"
-            SOURCE_IMAGE_NAME: caddy
-            SOURCE_IMAGE_TAG: latest
-            REGISTRY_USERNAME_SECRET_NAME: ${{ inputs.service.endoser-proxy.username_secret_name || '' }} 
-            REGISTRY_PASSWORD_SECRET_NAME: ${{ inputs.service.endoser-proxy.password_secret_name || '' }}
+            GIT_REF: ${{ inputs.service.endoser-proxy.git_ref || '' }}
+            DOCKER_FILE_PATH: ${{ inputs.service.endoser-proxy.docker_file_path || 'Dockerfile' }}  # The docker path, file, is the relative path to the docker file from the root of the repo.
+            SOURCE_CONTEXT_DIR: ${{ inputs.service.endoser-proxy.source_context_dir || 'proxy' }}    # The context dir, context, sets the context for the build. i.e. where the build will source files from
+            SOURCE_IMAGE_REGISTRY: ${{ inputs.service.endoser-proxy.source_image_registry || 'artifacts.developer.gov.bc.ca/docker-remote/' }}
+            SOURCE_IMAGE_NAME: ${{ inputs.service.endoser-proxy.source_image_name || 'caddy' }}
+            SOURCE_IMAGE_TAG: ${{ inputs.service.endoser-proxy.source_image_tag || 'latest' }}
+            REGISTRY_USERNAME_SECRET_NAME: ${{ inputs.service.endoser-proxy.username_secret_name || 'ARTIFACTORY_USERNAME' }} 
+            REGISTRY_PASSWORD_SECRET_NAME: ${{ inputs.service.endoser-proxy.password_secret_name || 'ARTIFACTORY_PASSWORD' }}
           - service: aries-endorser-api
             GIT_REPO_URL: ${{ inputs.service.endoser-api.git_repo_url || 'hyperledger/aries-endorser-service' }}
             GIT_REF: ${{ inputs.service.endoser-api.git_ref || '' }}
-            DOCKER_FILE_PATH: ${{ inputs.service.endoser-api.git_ref || 'Dockerfile.endorser' }} # The docker path, file, is the relative path to the docker file from the root of the repo.
-            SOURCE_CONTEXT_DIR: ${{ inputs.service.endoser-api.git_ref || 'endorser' }} # The context dir, context, sets the context for the build. i.e. where the build will source files from
-            SOURCE_IMAGE_REGISTRY: ${{ inputs.service.endoser-api.git_ref || 'artifacts.developer.gov.bc.ca/docker-remote/' }}
-            SOURCE_IMAGE_NAME: ${{ inputs.service.endoser-api.git_ref || 'python' }}
-            SOURCE_IMAGE_TAG: ${{ inputs.service.endoser-api.git_ref || '3.10-slim-buster' }}
-            REGISTRY_USERNAME_SECRET_NAME: ${{ inputs.service.endoser-api.username_secret_name || '' }} 
-            REGISTRY_PASSWORD_SECRET_NAME: ${{ inputs.service.endoser-api.password_secret_name || '' }}
+            DOCKER_FILE_PATH: ${{ inputs.service.endoser-api.docker_file_path || 'Dockerfile.endorser' }} # The docker path, file, is the relative path to the docker file from the root of the repo.
+            SOURCE_CONTEXT_DIR: ${{ inputs.service.endoser-api.SOURCE_CONTEXT_DIR || 'endorser' }} # The context dir, context, sets the context for the build. i.e. where the build will source files from
+            SOURCE_IMAGE_REGISTRY: ${{ inputs.service.endoser-api.source_image_registry || 'artifacts.developer.gov.bc.ca/docker-remote/' }}
+            SOURCE_IMAGE_NAME: ${{ inputs.service.endoser-api.source_image_name|| 'python' }}
+            SOURCE_IMAGE_TAG: ${{ inputs.service.endoser-api.source_image_tag || '3.10-slim-buster' }}
+            REGISTRY_USERNAME_SECRET_NAME: ${{ inputs.service.endoser-api.username_secret_name || 'ARTIFACTORY_USERNAME' }} 
+            REGISTRY_PASSWORD_SECRET_NAME: ${{ inputs.service.endoser-api.password_secret_name || 'ARTIFACTORY_PASSWORD' }}
     outputs:
       aries-endorser-agent_digest: ${{ steps.digest.outputs.aries-endorser-agent_digest }} 
       aries-endorser-backup_digest: ${{ steps.digest.outputs.aries-endorser-backup_digest }} 
